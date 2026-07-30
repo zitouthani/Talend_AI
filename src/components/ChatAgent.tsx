@@ -1,15 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, BookOpen, Upload, Code, Copy, Check, Sparkles, Layers, Image as ImageIcon, FileText, X } from 'lucide-react';
-import { Book, CustomDocument, ChatMessage } from '../types';
+import { ArrowUp, Sparkles, Copy, Check, Code, Database, GitBranch, Layers, Cpu } from 'lucide-react';
+import Markdown from 'react-markdown';
+import { ChatMessage } from '../types';
 import { JobFlowVisualizer } from './JobFlowVisualizer';
 
-interface ChatAgentProps {
-  books: Book[];
-  activeBooks: string[];
-  toggleBook: (id: string) => void;
-  customDocs: CustomDocument[];
-  onAddCustomDoc: (doc: CustomDocument) => void;
-}
+interface ChatAgentProps {}
 
 const renderFormattedText = (
   text: string,
@@ -17,115 +12,80 @@ const renderFormattedText = (
   copiedId: string | null,
   handleCopy: (code: string, id: string) => void
 ) => {
-  if (!text.includes('```')) {
-    return <div className="leading-relaxed whitespace-pre-wrap">{text}</div>;
-  }
-
-  const parts = text.split(/(```[\s\S]*?```)/g);
+  // Strip raw FLOW lines or ASCII diagram text and orphaned connectors completely from message display
+  const cleanedText = text
+    .replace(/^.*FLOW:.*$/gm, '')
+    .replace(/(?:\[[^\]]+\]\s*--\([^)]*\)-->\s*)+\[[^\]]+\]/gi, '')
+    .replace(/--\([^)]*\)-->/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
   return (
-    <div className="space-y-3">
-      {parts.map((part, idx) => {
-        if (part.startsWith('```') && part.endsWith('```')) {
-          const firstLineEnd = part.indexOf('\n');
-          let lang = 'code';
-          let codeContent = '';
-
-          if (firstLineEnd !== -1) {
-            lang = part.slice(3, firstLineEnd).trim() || 'code';
-            codeContent = part.slice(firstLineEnd + 1, -3).trim();
-          } else {
-            codeContent = part.slice(3, -3).trim();
+    <div className="markdown-body text-sm sm:text-[15px] leading-relaxed text-zinc-200">
+      <Markdown
+        components={{
+          h1: ({ children }) => <h1 className="text-base sm:text-lg font-bold text-white mt-4 mb-2 font-sans tracking-tight">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-sm sm:text-base font-semibold text-zinc-100 mt-3 mb-1.5 font-sans tracking-tight">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-xs sm:text-sm font-semibold text-zinc-200 mt-2.5 mb-1 font-sans">{children}</h3>,
+          p: ({ children }) => <p className="mb-3 leading-relaxed text-zinc-200">{children}</p>,
+          strong: ({ children }) => <strong className="font-bold text-cyan-400">{children}</strong>,
+          ul: ({ children }) => <ul className="list-disc list-outside space-y-1.5 my-2.5 text-zinc-200 pl-5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-outside space-y-1.5 my-2.5 text-zinc-200 pl-5">{children}</ol>,
+          li: ({ children }) => <li className="text-zinc-200 pl-1">{children}</li>,
+          code({ inline, className, children, ...props }: any) {
+            const match = /language-(\w+)/.exec(className || '');
+            const codeString = String(children).replace(/\n$/, '');
+            if (!inline && codeString.includes('\n')) {
+              const blockId = `${msgId}-code-${Math.random()}`;
+              const isCopied = copiedId === blockId;
+              const lang = match ? match[1] : 'code';
+              return (
+                <div className="my-4 rounded-xl bg-[#0d0d0d] border border-zinc-800/90 overflow-hidden font-mono text-xs sm:text-sm shadow-md">
+                  <div className="flex items-center justify-between px-4 py-2 bg-[#1e1e1e] border-b border-zinc-800 text-zinc-400 text-xs font-sans">
+                    <span className="font-mono text-zinc-300 text-xs lowercase">{lang}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(codeString, blockId)}
+                      className="flex items-center space-x-1.5 hover:text-white transition text-xs font-sans text-zinc-400"
+                    >
+                      {isCopied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400 font-medium">Copié !</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copier le code</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <pre className="p-4 overflow-x-auto text-zinc-100 leading-relaxed font-mono bg-[#0d0d0d]">
+                    {codeString}
+                  </pre>
+                </div>
+              );
+            }
+            return (
+              <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-100 font-mono text-xs border border-zinc-700/50" {...props}>
+                {children}
+              </code>
+            );
           }
-
-          const blockId = `${msgId}-code-${idx}`;
-          const isCopied = copiedId === blockId;
-
-          return (
-            <div key={idx} className="my-3 rounded-xl bg-slate-950 border border-slate-700/80 overflow-hidden font-mono text-xs shadow-inner">
-              <div className="flex items-center justify-between px-3.5 py-2 bg-slate-900 border-b border-slate-800 text-slate-300">
-                <span className="flex items-center space-x-1.5 text-[11px] font-bold uppercase tracking-wide text-sky-400">
-                  <Code className="w-3.5 h-3.5" />
-                  <span>{lang}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleCopy(codeContent, blockId)}
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-200 border border-slate-700 transition"
-                >
-                  {isCopied ? (
-                    <>
-                      <Check className="w-3 h-3 text-emerald-400" />
-                      <span className="text-emerald-400 font-semibold">Copié !</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3 text-slate-400" />
-                      <span>Copier le code</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <pre className="p-3.5 overflow-x-auto text-slate-200 text-xs leading-relaxed whitespace-pre font-mono">
-                {codeContent}
-              </pre>
-            </div>
-          );
-        }
-
-        return (
-          <div key={idx} className="leading-relaxed whitespace-pre-wrap">
-            {part}
-          </div>
-        );
-      })}
+        }}
+      >
+        {cleanedText}
+      </Markdown>
     </div>
   );
 };
 
-export const ChatAgent: React.FC<ChatAgentProps> = ({
-  books,
-  activeBooks,
-  toggleBook,
-  customDocs,
-  onAddCustomDoc
-}) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'agent',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: `Bonjour ! Je suis **TalendIA Agent**, votre assistant IA conversationnel spécialisé dans l'analyse de livres et documentations Talend.
-
-J'ai actuellement en mémoire **${activeBooks.length} livre(s) Talend** (composants TOS ETL, expressions tMap, REST APIs, routines Java custom, et schémas d'architecture).
-
-📌 **Que puis-je faire pour vous ?**
-- Vous fournir les **exemples de code exacts** (ex: routines Java, requêtes SQL dynamiques, expressions tMap).
-- Générer les **schémas et diagrammes de flux de jobs** associés.
-- Vous citer **les chapitres et pages précises** des livres.
-
-Posez une question ci-dessous ou sélectionnez une suggestion de recherche !`,
-      bookCitations: ["Livre 1 : Talend Open Studio Data Integration", "Livre 2 : Architecture Talend Avancée"],
-      diagrams: [
-        {
-          title: "Architecture type d'un Job Talend ETL avec tMap & Catch Reject",
-          type: "tmap-etl",
-          flow: ["tFileInputDelimited", "tMap (Join)", "tDBOutput", "tLogRow_Reject"]
-        }
-      ]
-    }
-  ]);
-
+export const ChatAgent: React.FC<ChatAgentProps> = () => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
-  // Custom document upload modal state
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadText, setUploadText] = useState('');
-  const [uploadName, setUploadName] = useState('');
-  const [uploadImageFile, setUploadImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -154,8 +114,6 @@ Posez une question ci-dessous ou sélectionnez une suggestion de recherche !`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: query,
-          activeBooks,
-          customDocuments: customDocs,
           history: messages.slice(-8).map(m => ({ sender: m.sender, text: m.text }))
         })
       });
@@ -163,21 +121,51 @@ Posez une question ci-dessous ou sélectionnez une suggestion de recherche !`,
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erreur réseau');
+        throw new Error(data.error || 'Erreur système');
       }
 
-      // Detect if we should render a visual diagram based on the query contents
       const textLower = query.toLowerCase();
-      let diagramPreset: 'tmap-etl' | 'rest-api' | 'db-transaction' | 'java-routine' | undefined = undefined;
+      let diagramPreset: 'tmap-etl' | 'scd-dim' | 'cdc-stream' | 'parallel-job' | 'file-processing' | 'subjob-run' | 'rest-api' | 'db-transaction' | 'java-routine' | 'loop-rest' | 'jvm-memory' = 'tmap-etl';
 
-      if (textLower.includes('tmap') || textLower.includes('join') || textLower.includes('reject')) {
-        diagramPreset = 'tmap-etl';
+      if (textLower.includes('scd') || textLower.includes('dimension') || textLower.includes('évolution lente') || textLower.includes('evolution lente') || textLower.includes('tdbscd') || textLower.includes('type 1') || textLower.includes('type 2') || textLower.includes('historisation')) {
+        diagramPreset = 'scd-dim';
+      } else if (textLower.includes('cdc') || textLower.includes('change data capture') || textLower.includes('changement')) {
+        diagramPreset = 'cdc-stream';
+      } else if (textLower.includes('parallel') || textLower.includes('parallèle') || textLower.includes('thread') || textLower.includes('tparallelize')) {
+        diagramPreset = 'parallel-job';
+      } else if (textLower.includes('filelist') || textLower.includes('repertoire') || textLower.includes('dossier') || textLower.includes('fichiers') || textLower.includes('tfilelist')) {
+        diagramPreset = 'file-processing';
+      } else if (textLower.includes('trunjob') || textLower.includes('subjob') || textLower.includes('orchestr')) {
+        diagramPreset = 'subjob-run';
+      } else if (textLower.includes('memoire') || textLower.includes('mémoire') || textLower.includes('xmx') || textLower.includes('jvm') || textLower.includes('heap') || textLower.includes('xms')) {
+        diagramPreset = 'jvm-memory';
+      } else if (textLower.includes('loop') || textLower.includes('boucle') || textLower.includes('iterate')) {
+        diagramPreset = 'loop-rest';
       } else if (textLower.includes('rest') || textLower.includes('api') || textLower.includes('json')) {
         diagramPreset = 'rest-api';
       } else if (textLower.includes('routine') || textLower.includes('java') || textLower.includes('sha256') || textLower.includes('hash')) {
         diagramPreset = 'java-routine';
-      } else if (textLower.includes('prejob') || textLower.includes('transaction') || textLower.includes('commit')) {
+      } else if (textLower.includes('prejob') || textLower.includes('postjob') || textLower.includes('transaction')) {
         diagramPreset = 'db-transaction';
+      }
+
+      // Check if response contains an ASCII flow string or FLOW: line
+      const asciiFlowMatch = data.text.match(/(?:FLOW:\s*)?(\[[^\]]+\](?:\s*--\([^)]+\)-->\s*\[[^\]]+\])+)/i);
+      let extractedFlowString: string | undefined = undefined;
+      if (asciiFlowMatch) {
+        extractedFlowString = asciiFlowMatch[1].trim();
+      }
+
+      // Only create diagrams array if a valid flow string was explicitly generated and verified
+      let diagramsList: any[] | undefined = undefined;
+      if (extractedFlowString && extractedFlowString.length > 5) {
+        diagramsList = [
+          {
+            title: `Schéma Visuel du Job : ${query}`,
+            type: diagramPreset,
+            flow: [extractedFlowString]
+          }
+        ];
       }
 
       const agentMsg: ChatMessage = {
@@ -185,15 +173,7 @@ Posez une question ci-dessous ou sélectionnez une suggestion de recherche !`,
         sender: 'agent',
         text: data.text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        bookCitations: activeBooks.map(bId => {
-          const b = books.find(item => item.id === bId);
-          return b ? b.title : bId;
-        }),
-        diagrams: diagramPreset ? [{
-          title: `Schéma de job généré pour : ${query}`,
-          type: diagramPreset,
-          flow: []
-        }] : undefined
+        diagrams: diagramsList
       };
 
       setMessages(prev => [...prev, agentMsg]);
@@ -204,7 +184,7 @@ Posez une question ci-dessous ou sélectionnez une suggestion de recherche !`,
         {
           id: (Date.now() + 1).toString(),
           sender: 'agent',
-          text: `⚠️ **Erreur de connexion** : ${error.message || "Impossible d'obtenir une réponse."}. Vérifiez la clé GEMINI_API_KEY dans les secrets.`,
+          text: `Erreur : ${error.message || "Impossible de traiter la demande"}.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -219,306 +199,188 @@ Posez une question ci-dessous ou sélectionnez une suggestion de recherche !`,
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploadImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const SUGGESTIONS = [
+    {
+      title: "Dimensions SCD (tDBSCD)",
+      desc: "Gérer l'historisation des données Type 1 et Type 2",
+      icon: <Database className="w-5 h-5 text-cyan-400" />,
+      query: "Gérer les dimensions à évolution lente SCD dans Talend avec le composant tDBSCD."
+    },
+    {
+      title: "tMap & Catch Rejects",
+      desc: "Inner Join, expressions Java et traitement des erreurs",
+      icon: <GitBranch className="w-5 h-5 text-cyan-400" />,
+      query: "Explique le composant tMap avec Inner Join, expressions et capture des rejets Catch Unmatched."
+    },
+    {
+      title: "Parallélisme (tParallelize)",
+      desc: "Exécuter des subjobs en parallèle sur plusieurs threads",
+      icon: <Layers className="w-5 h-5 text-cyan-400" />,
+      query: "Comment utiliser tParallelize pour exécuter plusieurs subjobs en parallèle ?"
+    },
+    {
+      title: "Routine Java SHA256 & JVM",
+      desc: "Code Java personnalisé et allocation mémoire -Xmx",
+      icon: <Cpu className="w-5 h-5 text-cyan-400" />,
+      query: "Code d'une routine Java de hachage SHA-256 et configuration mémoire JVM (-Xmx1024m)."
     }
-  };
-
-  const handleUploadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!uploadName.trim()) return;
-
-    let contentToStore = uploadText;
-
-    if (uploadImageFile && imagePreview) {
-      // Analyze with Gemini Vision endpoint first
-      try {
-        const base64Clean = imagePreview.split(',')[1];
-        const res = await fetch('/api/analyze-doc', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileName: uploadName,
-            fileType: uploadImageFile.type,
-            base64Data: base64Clean,
-            textContent: uploadText
-          })
-        });
-        const data = await res.json();
-        if (data.extractedContent) {
-          contentToStore += `\n[Analyse Gemini Vision de l'image de schéma]: ${data.extractedContent}`;
-        }
-      } catch (err) {
-        console.error("Erreur vision:", err);
-      }
-    }
-
-    const newDoc: CustomDocument = {
-      id: Date.now().toString(),
-      name: uploadName,
-      content: contentToStore,
-      type: uploadImageFile ? 'image' : 'text',
-      uploadedAt: new Date().toLocaleDateString()
-    };
-
-    onAddCustomDoc(newDoc);
-    setUploadName('');
-    setUploadText('');
-    setUploadImageFile(null);
-    setImagePreview(null);
-    setIsUploading(false);
-  };
-
-  const SAMPLE_QUERIES = [
-    { label: "📍 tMap Inner Join & Reject", query: "Donne-moi un exemple complet de configuration tMap avec Inner Join, expressions de transformation Java et capture des lignes rejetées (Catch Unmatched)." },
-    { label: "🔒 Routine Java SHA-256", query: "Fournis la routine Java complète pour le hachage SHA-256 et montre comment l'appeler dans un composant tMap." },
-    { label: "🌐 API REST avec tRESTRequest", query: "Explique l'architecture d'un job API REST Talend avec tRESTRequest, tExtractJSONFields et tRESTResponse avec un exemple de code." },
-    { label: "⚡ tJava vs tJavaRow vs tJavaFlex", query: "Quelles sont les différences entre tJava, tJavaRow et tJavaFlex d'après le livre 2 ? Donne un exemple d'utilisation pour chacun." }
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-7xl mx-auto px-2 sm:px-4 py-3">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] relative font-sans text-zinc-100">
       
-      {/* Scope Selector Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 mb-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center space-x-2">
-          <BookOpen className="w-4 h-4 text-sky-400" />
-          <span className="text-xs font-semibold text-slate-200 uppercase tracking-wide">
-            Livres Actifs en Mémoire :
-          </span>
-        </div>
+      {/* Messages Scroll Area */}
+      <div className="flex-1 overflow-y-auto pb-36 pt-6 px-4">
+        <div className="max-w-3xl mx-auto space-y-6">
+          
+          {/* ChatGPT Empty Welcome State */}
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center my-auto px-2">
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-cyan-500/40 text-cyan-400 flex items-center justify-center mb-5 shadow-[0_0_20px_rgba(0,240,255,0.15)]">
+                <Sparkles className="w-6 h-6 text-cyan-400" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-100 mb-8 font-sans tracking-tight">
+                En quoi puis-je vous aider sur Talend aujourd'hui ?
+              </h1>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {books.map(book => {
-            const isSelected = activeBooks.includes(book.id);
-            return (
-              <button
-                key={book.id}
-                onClick={() => toggleBook(book.id)}
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs transition-all border ${
-                  isSelected
-                    ? 'bg-sky-500/10 text-sky-300 border-sky-500/40 font-medium'
-                    : 'bg-slate-800/60 text-slate-400 border-slate-700 hover:border-slate-600'
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-sky-400' : 'bg-slate-600'}`} />
-                <span className="truncate max-w-[200px]">{book.title}</span>
-              </button>
-            );
-          })}
-
-          {customDocs.length > 0 && (
-            <span className="px-2.5 py-1 bg-purple-500/10 text-purple-300 border border-purple-500/30 rounded-full text-xs font-medium">
-              +{customDocs.length} document(s) perso
-            </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
+                {SUGGESTIONS.map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSendMessage(item.query)}
+                    className="p-4 rounded-2xl bg-[#2f2f2f]/60 hover:bg-[#2f2f2f] border border-zinc-700/50 text-left transition flex flex-col justify-between group"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-sm text-zinc-200 group-hover:text-cyan-400 transition">
+                        {item.title}
+                      </span>
+                      {item.icon}
+                    </div>
+                    <p className="text-xs text-zinc-400 font-normal leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
-          <button
-            onClick={() => setIsUploading(true)}
-            className="flex items-center space-x-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-full text-xs font-medium transition"
-          >
-            <Upload className="w-3.5 h-3.5 text-amber-400" />
-            <span>Ajouter un livre / extrait</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Prompts Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-2 scrollbar-none">
-        <span className="text-[11px] text-slate-400 whitespace-nowrap font-medium flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Exemples du livre :
-        </span>
-        {SAMPLE_QUERIES.map((sq, idx) => (
-          <button
-            key={idx}
-            onClick={() => handleSendMessage(sq.query)}
-            disabled={isLoading}
-            className="text-xs whitespace-nowrap px-3 py-1 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700/60 transition shadow-sm hover:border-sky-500/50"
-          >
-            {sq.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Chat Messages Container */}
-      <div className="flex-1 overflow-y-auto bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-inner">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
-          >
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="text-[10px] text-slate-400 font-medium">
-                {msg.sender === 'user' ? 'Vous' : 'TalendIA Agent'} • {msg.timestamp}
-              </span>
-            </div>
-
+          {/* ChatGPT Conversation Messages */}
+          {messages.map((msg) => (
             <div
-              className={`max-w-[92%] sm:max-w-[85%] rounded-2xl p-4 shadow-md ${
-                msg.sender === 'user'
-                  ? 'bg-sky-600 text-white rounded-tr-none'
-                  : 'bg-slate-800 text-slate-100 border border-slate-700/80 rounded-tl-none'
-              }`}
+              key={msg.id}
+              className={`flex w-full ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {/* Message Body rendering */}
-              <div className="text-xs sm:text-sm leading-relaxed">
-                {renderFormattedText(msg.text, msg.id, copiedId, handleCopy)}
-              </div>
+              {msg.sender === 'user' ? (
+                /* User Message Bubble */
+                <div className="bg-[#2f2f2f] text-zinc-100 px-4 py-3 rounded-[22px] max-w-[85%] text-sm sm:text-[15px] leading-relaxed font-sans shadow-sm border border-zinc-700/40">
+                  {msg.text}
+                </div>
+              ) : (
+                /* Assistant Response Block */
+                <div className="flex space-x-3 max-w-full w-full">
+                  <div className="w-8 h-8 rounded-xl bg-slate-900 border border-cyan-500/40 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div className="flex-1 space-y-3 min-w-0">
+                    
+                    {/* Render Visual Diagram in ChatGPT output block if verified */}
+                    {msg.diagrams && msg.diagrams.map((diag, dIdx) => (
+                      <div key={dIdx} className="my-2">
+                        <JobFlowVisualizer
+                          title={diag.title}
+                          preset={diag.type as any}
+                          flowString={diag.flow && diag.flow.length > 0 ? diag.flow[0] : undefined}
+                        />
+                      </div>
+                    ))}
 
-              {/* Diagrams Rendering */}
-              {msg.diagrams && msg.diagrams.map((diag, dIdx) => (
-                <JobFlowVisualizer key={dIdx} title={diag.title} preset={diag.type as any} />
-              ))}
+                    {/* Text Body */}
+                    {renderFormattedText(msg.text, msg.id, copiedId, handleCopy)}
 
-              {/* Book Citations Chips */}
-              {msg.bookCitations && msg.bookCitations.length > 0 && (
-                <div className="mt-3 pt-2 border-t border-slate-700/50 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <BookOpen className="w-3 h-3 text-sky-400" /> Source de référence :
-                  </span>
-                  {msg.bookCitations.map((cite, cIdx) => (
-                    <span
-                      key={cIdx}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-slate-900/80 text-sky-300 border border-sky-500/30 font-mono"
-                    >
-                      {cite}
-                    </span>
-                  ))}
+                    {/* Message Copy Button */}
+                    <div className="flex items-center justify-start pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cleanText = msg.text
+                            .replace(/^.*FLOW:.*$/gm, '')
+                            .replace(/(?:\[[^\]]+\]\s*--\([^)]*\)-->\s*)+\[[^\]]+\]/gi, '')
+                            .replace(/--\([^)]*\)-->/g, '')
+                            .trim();
+                          handleCopy(cleanText, `msg-${msg.id}`);
+                        }}
+                        className="flex items-center space-x-1.5 text-xs text-zinc-400 hover:text-cyan-400 transition font-sans px-2.5 py-1 rounded-lg hover:bg-zinc-800 border border-transparent hover:border-zinc-700/80"
+                      >
+                        {copiedId === `msg-${msg.id}` ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-cyan-400" />
+                            <span className="text-cyan-400 font-medium">Réponse copiée !</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>Copier la réponse</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        ))}
+          ))}
 
-        {isLoading && (
-          <div className="flex items-center space-x-3 p-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-300 text-xs w-fit">
-            <Bot className="w-5 h-5 text-sky-400 animate-spin" />
-            <span>TalendIA Agent analyse les chapitres et extrait les schémas...</span>
-          </div>
-        )}
-        <div ref={chatEndRef} />
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="flex space-x-3 max-w-full items-center">
+              <div className="w-8 h-8 rounded-xl bg-slate-900 border border-cyan-500/40 text-cyan-400 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-cyan-400 animate-spin" />
+              </div>
+              <div className="flex items-center space-x-2 text-zinc-400 text-sm font-sans">
+                <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span>Génération du schéma et de la réponse...</span>
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
       </div>
 
-      {/* Input Form */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSendMessage();
-        }}
-        className="mt-3 flex items-center space-x-2"
-      >
-        <div className="relative flex-1">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Posez une question sur Talend (ex: Comment mapper deux tables dans tMap ?)..."
-            disabled={isLoading}
-            className="w-full bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition"
-          />
+      {/* ChatGPT Floating Input Box */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#212121] via-[#212121]/95 to-transparent pt-6 pb-4 px-4 z-40">
+        <div className="max-w-3xl mx-auto">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendMessage();
+            }}
+            className="relative flex items-center bg-[#2f2f2f] border border-zinc-700/60 focus-within:border-zinc-500 rounded-[26px] p-2 transition shadow-xl"
+          >
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Envoyer un message à Talend AI..."
+              disabled={isLoading}
+              className="w-full bg-transparent text-white placeholder-zinc-400 px-4 py-2.5 text-sm sm:text-base focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !inputMessage.trim()}
+              className="w-8 h-8 rounded-full bg-white text-black hover:bg-zinc-200 disabled:opacity-30 disabled:bg-zinc-700 disabled:text-zinc-500 flex items-center justify-center transition shrink-0 ml-2"
+            >
+              <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </form>
+          <p className="text-[11px] text-zinc-500 text-center mt-2.5 font-sans">
+            Talend AI peut faire des erreurs. Pensez à vérifier les informations importantes.
+          </p>
         </div>
-        
-        <button
-          type="submit"
-          disabled={isLoading || !inputMessage.trim()}
-          className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 disabled:opacity-50 text-white p-3 rounded-xl shadow-md transition flex items-center justify-center font-medium"
-        >
-          <Send className="w-5 h-5" />
-        </button>
-      </form>
-
-      {/* Modal for adding custom book/doc excerpts */}
-      {isUploading && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center space-x-2">
-                <Upload className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base font-bold text-slate-100">
-                  Ajouter un Extrait / Livre Talend
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsUploading(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUploadSubmit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Titre du document ou manuel
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="ex: Manuel Talend ESB 7.3 - Chapitre REST"
-                  value={uploadName}
-                  onChange={(e) => setUploadName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 text-slate-100 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Image du Schéma de Job (Optionnel - Gemini Vision)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700"
-                />
-                {imagePreview && (
-                  <div className="mt-2 relative w-32 h-20 rounded border border-slate-700 overflow-hidden">
-                    <img src={imagePreview} alt="Aperçu" className="w-full h-full object-cover" />
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Contenu textuel / Copier-coller du chapitre ou code
-                </label>
-                <textarea
-                  rows={5}
-                  required
-                  placeholder="Collez ici le texte d'un chapitre, des composants ou du code Java..."
-                  value={uploadText}
-                  onChange={(e) => setUploadText(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 text-slate-100 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-sky-500 font-mono"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsUploading(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-lg text-xs font-semibold shadow-md"
-                >
-                  Indexer dans l'Agent IA
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      </div>
 
     </div>
   );
 };
+

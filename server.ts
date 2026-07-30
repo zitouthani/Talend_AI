@@ -27,111 +27,71 @@ function getAIClient() {
   });
 }
 
-// Default Knowledge Base of 2 Talend Books
+// Default Knowledge Base featuring Pascal Garcia's Talend Book
 const DEFAULT_TALEND_BOOKS = [
   {
-    id: "book-1",
-    title: "Livre 1 : Talend Open Studio Data Integration - Maîtrise des Composants et ETL",
-    author: "Guide d'Architecture Talend & Pratiques ETL",
-    pages: 320,
+    id: "talend-basics-pascal-garcia",
+    title: "Formation TALEND for Data Integration – Basics",
+    author: "Pascal GARCIA (Directeur Technique WAPSI / CleverInstitut)",
+    pages: 87,
     chapters: [
       {
         num: 1,
-        title: "Introduction aux Jobs Talend & Architecture du Studio",
-        content: `Chapitre 1: Architecture des Jobs Talend TOS.
-Un Job Talend est compilé en un fichier Java autonome.
-Composants clés:
-- tPrejob / tPostjob : Exécution inconditionnelle avant/après le job principal.
-- tLogRow : Console d'affichage (mode Tabular ou Basic).
-- tFileInputDelimited : Lecture de fichiers CSV/TXT avec gestion des séparateurs (;, ,, tab).
-Schéma d'interconnexion:
-Trigger (OnSubjobOk, OnComponentOk, RunIf) vs Main Data Flow (Row -> Main).
-Variables de contexte : context.myVariable, alimentées via tContextLoad ou fichiers .properties.`
+        title: "Introduction aux Jobs Talend, Architecture TOS & Studio Eclipse RCP",
+        content: `Chapitre 1 (Pages 1-16): Architecture des Jobs Talend TOS.
+Un Job Talend est compilé en code Java natif autonome.
+Modules clés du Studio :
+- Business Modeler : Modélisation haut niveau pour la MOA et les architectes.
+- Job Designer : Palette graphique de composants interconnectés par des flux Row (Main, Lookup, Reject) ou Triggers.
+- Metadata Manager : Référentiel centralisé (métadonnées BDD, fichiers plats, XML).
+Composants clés : tPrejob / tPostjob, tLogRow (mode Basic/Tabular), tFileInputDelimited, tFileOutputDelimited.`
       },
       {
         num: 2,
-        title: "Le Composant tMap : Expressions, Join, Catch Unmatched",
-        content: `Chapitre 2: Le Composant Cœur tMap.
-Le composant tMap est le centre névralgique de transformation dans Talend.
-Fonctionnalités:
-1. Inner Join vs Left Outer Join vs Unique Match / First Match / All Matches.
-2. Expression Builder : Routines Java standards (Numeric.sequence, Var.myVar, StringHandling.UPPERCASE).
-3. Catch Unmatched Rows : Routage des lignes rejetées vers une sortie dédiée pour déduplication ou audit.
-Exemple d'expression tMap pour nettoyage de date:
-TalendDataGenerator.getFirstName() + " " + StringHandling.UPPER(row1.nom)
-Exemple Catch Reject: Activer "Catch output reject" sur la table de sortie pour capter les clés non trouvées lors du Inner Join.`
+        title: "Installation, Prérequis & Allocation Mémoire JVM (-Xms256m, -Xmx1024m)",
+        content: `Chapitre 2 (Pages 17-21): Configuration JVM & Performance.
+Allocation mémoire dans le fichier TalendStudio.ini :
+-vm C:\\Program Files\\Java\\jdk1.7.0_79\\bin\\javaw.exe
+-vmargs
+-Xms256m (Mémoire vive minimale)
+-Xmx1024m (Mémoire vive maximale)
+-XX:MaxPermSize=256m
+-Dfile.encoding=UTF-8
+Surveillance indispensable de la mémoire pour les composants tSortRow, tAggregateRow et gros Lookups tMap.`
       },
       {
         num: 3,
-        title: "Gestion des Bases de Données (tDBInput, tDBOutput, TransactSQL)",
-        content: `Chapitre 3: Composants Base de Données (tPostgreSQLInput, tOracleOutput, tDBOutput).
-Optimisation des flux DB:
-- Commit Size : Nombre de lignes par lot (par défaut 10000).
-- Action sur les données : Insert, Update, Insert or Update, Delete.
-- Die on error : Si coché, stoppe le subjob en cas d'erreur SQL.
-Exemple SQL avec variable de contexte:
-"SELECT id, code_client, montant FROM transactions WHERE date_transaction >= '" + context.date_debut + "'"
-Gestion des transactions : tDBConnection, tDBCommit, tDBRollback.`
-      }
-    ]
-  },
-  {
-    id: "book-2",
-    title: "Livre 2 : Architecture Talend Avancée - API REST, JSON & Routines Java Custom",
-    author: "Expertise Enterprise Data Integration & Cloud",
-    pages: 410,
-    chapters: [
-      {
-        num: 1,
-        title: "Web Services & REST APIs (tRESTRequest, tRESTResponse, tExtractJSONFields)",
-        content: `Chapitre 1: Création d'API REST avec Talend ESB.
-Composants API:
-- tRESTRequest : Expose un endpoint HTTP REST (GET /api/v1/customers/{id}, POST /api/v1/orders).
-- tExtractJSONFields : Parse un flux JSON complexe via JSONPath ou XPath (ex: $.data.users[*].email).
-- tRESTResponse : Renvoie le status HTTP (200 OK, 400 Bad Request, 500 Error) et le body JSON/XML.
-Exemple d'extraction JSON:
-Query Loop: "$.customers[*]"
-Field Mapping: id -> "id", email -> "attributes.email", city -> "address.city".`
+        title: "Le Composant tMap : Expressions, Inner Join, Lookups & Catch Rejects",
+        content: `Chapitre 3 (Pages 39-56): Le Composant Cœur tMap.
+Transformations ETL, Multiplexage, Démultiplexage, Concaténation.
+1. Flux Main vs Lookups : Traitement prioritaire du flux Main.
+2. Modèles de correspondance : Unique Match (dernière correspondance), First Match, All Matches.
+3. Jointures : Inner Join vs Left Outer Join (All Rows).
+4. Capture des Rejets :
+   - 'Catch output reject' = true : filtre les lignes ne répondant à aucune condition de sortie.
+   - 'Catch lookup inner join reject' = true : capture les lignes du Main sans correspondance dans le Lookup.
+5. Table Var : Variables de mapping intermédiaire Java (ex: StringHandling.UPPERCASE(row1.nom)).
+6. Table ErrorReject :errorMessage et errorStackTrace pour audit d'exceptions.`
       },
       {
-        num: 2,
-        title: "Routines Java Personnalisées & Composants tJava / tJavaRow / tJavaFlex",
-        content: `Chapitre 2: Code Java Custom dans Talend.
-Routines Java dans le Repository:
-Code statique réutilisable dans tout le projet (Code -> Routines).
-Exemple de Routine Java personnalisé pour hachage SHA-256:
-public class SecurityUtils {
-    public static String hashSHA256(String input) {
-        if (input == null) return null;
-        try {
-            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes("UTF-8"));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-}
-Utilisation dans tMap: SecurityUtils.hashSHA256(row1.password)
-Différence tJava vs tJavaRow vs tJavaFlex:
-- tJava : Code exécuté 1 seule fois.
-- tJavaRow : Code exécuté pour CHAQUE ligne du flux (input_row.col -> output_row.col).
-- tJavaFlex : Possède 3 sections (Start, Main pour chaque ligne, End).`
+        num: 4,
+        title: "Composants de Transfert, Base de Données & Routines Java Custom",
+        content: `Chapitre 4 (Pages 33-38, 78): Connecteurs DB, FTP & Code Java.
+- Transferts : tFileList (itération sur dossier), tFTPGet, tFTPPut, tFileExist.
+- Base de données : tPostgreSQLInput, tOracleOutput, tDBOutput (Commit Size par défaut 10000, Die on error).
+- Routines Java : Code statique dans Code -> Routines (ex: SecurityUtils.hashSHA256(row1.password) pour le hachage cryptographique).
+- Différences Java : tJava (exécuté 1 fois), tJavaRow (exécuté par ligne), tJavaFlex (Start, Main, End).`
       },
       {
-        num: 3,
-        title: "Orchestration, Parallel Processing et Gestion des Erreurs",
-        content: `Chapitre 3: Robustesse & Multi-threading.
-- tParallelize : Exécution simultanée de subjobs indépendants.
-- tLogCatcher / tStatCatcher / tFlowMeterCatcher : Capture automatique des exceptions Java et métriques.
-- Buffer / MultiThread Execution dans l'onglet Context/Job Settings.
-Gestion du Cache tMap : Disk storage vs Memory pour les gros volumes de données lookup.`
+        num: 5,
+        title: "Orchestration (tPrejob/tPostjob), Triggers & Interception d'Erreurs (tLogCatcher)",
+        content: `Chapitre 5 (Pages 66-68, 81-84): Robustesse & Supervision.
+- tPrejob : Initialisation garantie (connexions BDD, chargement de contextes).
+- tPostjob : Nettoyage garanti (fermeture de connexions, suppression de fichiers temporaires).
+- Triggers : OnSubjobOK, OnSubjobError, OnComponentOK, OnComponentError, RunIf.
+- Supervision : tWarn (avertissement), tDie (arrêt d'urgence KO), tLogCatcher (capture automatique d'exceptions Java).
+- Contextes : Chargement dynamique avec tFileInputProperties et tContextLoad.
+- Arborescence serveur recommandée : /input, /work, /temp, /output, /archives.`
       }
     ]
   }
@@ -160,8 +120,8 @@ app.post("/api/chat", async (req, res) => {
     // Build context string from selected books and custom documents
     let contextText = "--- DOCUMENTS ET LIVRES TALEND DISPONIBLES EN RÉFÉRENCE ---\n\n";
 
-    // Include selected default books
-    if (activeBooks && Array.isArray(activeBooks)) {
+    // Include selected default books (or default to all books if not explicitly specified)
+    if (activeBooks && Array.isArray(activeBooks) && activeBooks.length > 0) {
       DEFAULT_TALEND_BOOKS.forEach(book => {
         if (activeBooks.includes(book.id)) {
           contextText += `=== ${book.title} (${book.author}) ===\n`;
@@ -170,6 +130,14 @@ app.post("/api/chat", async (req, res) => {
           });
           contextText += "\n";
         }
+      });
+    } else {
+      DEFAULT_TALEND_BOOKS.forEach(book => {
+        contextText += `=== ${book.title} (${book.author}) ===\n`;
+        book.chapters.forEach(ch => {
+          contextText += `\n[Chapitre ${ch.num}: ${ch.title}]\n${ch.content}\n`;
+        });
+        contextText += "\n";
       });
     }
 
@@ -181,16 +149,24 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
-    const systemPrompt = `Tu es "TalendIA Agent", un assistant expert en intégration de données, ETL et architecture Talend Open Studio / Talend Data Fabric / ESB.
-Ton rôle est de répondre aux questions de l'utilisateur en te basant EN PRIORITÉ sur les 2 livres Talend de référence fournis ci-dessous et les documents personnalisés.
+    const systemPrompt = `Tu es "TalendIA Agent", un assistant expert en intégration de données, ETL et architecture Talend.
+Ton rôle est de répondre de façon épurée, directe et hautement professionnelle aux questions sur Talend en t'appuyant sur l'ensemble de la base de connaissances et de code source.
 
 CONSIGNES STRICTES DE RÉPONSE :
-1. Citer explicitement la source et la page/chapitre (ex: "[Livre 1 - Chapitre 2 : tMap]" ou "[Livre 2 - Chapitre 2 : Routines Java]").
+1. NE JAMAIS citer de nom d'auteur, de titre de manuel, de numéro de page ou de source documentaire dans tes réponses. Va directement au fait.
 2. Fournir des EXEMPLES DE CODE CONCRETS (ex: expressions tMap Java, requêtes SQL dynamiques, routines Java, requêtes JSONPath) dans des blocs de code Markdown \`\`\`java / \`\`\`sql / \`\`\`json.
-3. Si la question concerne un flux ou un composant (comme tMap, tRESTRequest, tParallelize, tPrejob/tPostjob, routines Java), génère une description visuelle d'un schéma/diagramme de flux de job Talend.
-4. Réponds en français clair, structuré avec des titres, des puces et un ton professionnel et pédagogique.
+3. Si la question concerne un flux ou un composant (comme tMap, tRESTRequest, tParallelize, tPrejob/tPostjob, routines Java), décris le fonctionnement du flux de job Talend.
+4. Réponds en français clair, structuré avec des titres et des puces, sans bavardage superflu.
+5. RÈGLE VÉRIFIÉE SUR LES SCHÉMAS FLOW : Génère une ligne FLOW uniquement si un flux de composants Talend est réellement et rigoureusement concerné par la question posée. Vérifie scrupuleusement l'exactitude des composants et des types de liens. Si la question est conceptuelle, générale ou sans flux de composants spécifique, NE GÉNÈRE PAS de ligne FLOW.
+Format exact de la ligne FLOW si applicable :
+FLOW: [Composant1] --(TypeLien)--> [Composant2] --(TypeLien)--> [Composant3]
+Exemple pour SCD : FLOW: [tFileInputDelimited_1] --(row1 Main)--> [tMap_Keys] --(Main)--> [tDBSCD_1] --(SCD Output)--> [tDBOutput_DimClient]
+Exemple pour tMap : FLOW: [tFileInputDelimited_1] --(row1 Main)--> [tMap_1] --(out1 Main)--> [tDBOutput_1] --(Reject)--> [tLogRow_Rejects]
+Exemple pour tParallelize : FLOW: [tParallelize_1] --(Parallel 1)--> [tRunJob_Clients] --(OnSubjobOk)--> [tPostjob_Sync]
+6. Lorsque tu détailles un composant Talend, donne TOUJOURS la liste exacte et ordonnée des paramètres clés (Basic Settings -> Advanced Settings -> Schema), leurs descriptions précises et leurs valeurs recommandées.
+7. Si la question posée ne figure pas dans le contexte documentaire fourni ou nécessite des informations Web récentes/externes, utilise la recherche Web (Google Search Grounding) pour récupérer et synthétiser l'information exacte.
 
-CONTEXTE DOCUMENTAIRE EN VIGUEUR :
+CONTEXTE TECHNIQUE EN VIGUEUR :
 ${contextText}`;
 
     // Format chat conversation history for Gemini
@@ -214,20 +190,72 @@ ${contextText}`;
     });
 
     const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: formattedContents,
-      config: {
-        systemInstruction: systemPrompt,
-        temperature: 0.2, // Low temperature for factual precision against book sources
-      }
-    });
+    let responseText = "";
+    let candidate: any = null;
 
-    const replyText = response.text || "Désolé, aucune réponse n'a pu être générée.";
+    try {
+      // Primary attempt with Google Search Grounding
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: formattedContents,
+        config: {
+          systemInstruction: systemPrompt,
+          temperature: 0.2,
+          tools: [{ googleSearch: {} }],
+        }
+      });
+      responseText = response.text || "";
+      candidate = response.candidates?.[0];
+    } catch (primaryErr: any) {
+      console.warn("Attempt with Google Search grounding failed, retrying standard generation:", primaryErr?.message || primaryErr);
+      // Fallback attempt without tools if search grounding or tool call fails
+      try {
+        const fallbackResponse = await ai.models.generateContent({
+          model: "gemini-3.6-flash",
+          contents: formattedContents,
+          config: {
+            systemInstruction: systemPrompt,
+            temperature: 0.2,
+          }
+        });
+        responseText = fallbackResponse.text || "";
+        candidate = fallbackResponse.candidates?.[0];
+      } catch (fallbackErr: any) {
+        const errStr = String(fallbackErr?.message || fallbackErr);
+        if (errStr.includes("429") || errStr.includes("RESOURCE_EXHAUSTED") || errStr.includes("quota")) {
+          res.json({
+            text: "⚠️ **Quota de requêtes API temporairement atteint (429 Quota Exceeded).**\n\nLe quota du service de l'API Gemini a été atteint. Veuillez patienter une minute avant de poser votre prochaine question."
+          });
+          return;
+        }
+        throw fallbackErr;
+      }
+    }
+
+    let replyText = responseText || "Désolé, aucune réponse n'a pu être générée.";
+
+    // Extract Google Search Grounding sources if available
+    const groundingChunks = (candidate?.groundingMetadata as any)?.groundingChunks;
+    if (groundingChunks && Array.isArray(groundingChunks) && groundingChunks.length > 0) {
+      const sources = groundingChunks
+        .map((chunk: any) => chunk.web?.uri ? `- [${chunk.web.title || chunk.web.uri}](${chunk.web.uri})` : null)
+        .filter(Boolean);
+      if (sources.length > 0) {
+        const uniqueSources = Array.from(new Set(sources));
+        replyText += `\n\n---\n**🌐 Sources Web (Google Search Grounding) :**\n` + uniqueSources.join("\n");
+      }
+    }
 
     res.json({ text: replyText });
   } catch (error: any) {
     console.error("Erreur lors de la génération Gemini:", error);
+    const errStr = String(error?.message || error);
+    if (errStr.includes("429") || errStr.includes("RESOURCE_EXHAUSTED") || errStr.includes("quota")) {
+      res.json({
+        text: "⚠️ **Quota de requêtes API temporairement atteint (429 Quota Exceeded).**\n\nLe quota du service Gemini est saturé pour le moment. Veuillez réordonner votre demande dans 1 minute."
+      });
+      return;
+    }
     res.status(500).json({
       error: "Erreur serveur lors de la communication avec l'IA.",
       details: error.message || String(error)
