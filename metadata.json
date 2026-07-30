@@ -1,0 +1,8 @@
+{
+  "name": "Remix Talend AI Book Assistant",
+  "description": "Agent IA conversationnel pour analyser des livres et manuels Talend avec extraction d\u0027exemples de code et schémas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
