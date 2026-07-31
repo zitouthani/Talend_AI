@@ -45,7 +45,7 @@ function parseAsciiFlow(flowStr: string): { nodes: Node[]; links: Link[] } {
   const pattern = /\[([^\]]+)\]/g;
   const matches = [...flowStr.matchAll(pattern)];
   
-  if (matches.length === 0) return { nodes: [], links: [] };
+  if (matches.length < 2) return { nodes: [], links: [] };
 
   const linkTypes = [...flowStr.matchAll(/--\(([^)]+)\)-->/g)].map(m => m[1]);
 
@@ -118,7 +118,13 @@ export const JobFlowVisualizer: React.FC<JobFlowProps> = ({
     if (parsed.nodes.length > 0) {
       nodes = parsed.nodes;
       links = parsed.links;
+    } else {
+      return null;
     }
+  }
+
+  if (nodes.length === 0) {
+    return null;
   }
 
   if (!customNodes && !flowString) {

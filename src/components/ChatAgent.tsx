@@ -25,9 +25,11 @@ const renderFormattedText = (
       <Markdown
         components={{
           h1: ({ children }) => <h1 className="text-base sm:text-lg font-bold text-white mt-4 mb-2 font-sans tracking-tight">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-sm sm:text-base font-semibold text-zinc-100 mt-3 mb-1.5 font-sans tracking-tight">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-xs sm:text-sm font-semibold text-zinc-200 mt-2.5 mb-1 font-sans">{children}</h3>,
-          p: ({ children }) => <p className="mb-3 leading-relaxed text-zinc-200">{children}</p>,
+          h2: ({ children }) => <h2 className="text-sm sm:text-base font-bold text-cyan-300 mt-4 mb-2 font-sans tracking-tight border-b border-zinc-800 pb-1">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-xs sm:text-sm font-semibold text-zinc-100 mt-3 mb-1.5 font-sans flex items-center">{children}</h3>,
+          hr: () => <hr className="my-4 border-zinc-800" />,
+          blockquote: ({ children }) => <blockquote className="my-3 pl-3.5 border-l-2 border-cyan-500/80 bg-zinc-900/60 py-2 pr-3 rounded-r-lg text-zinc-300 text-xs sm:text-sm">{children}</blockquote>,
+          p: ({ children }) => <p className="mb-2.5 leading-relaxed text-zinc-200">{children}</p>,
           strong: ({ children }) => <strong className="font-bold text-cyan-400">{children}</strong>,
           ul: ({ children }) => <ul className="list-disc list-outside space-y-1.5 my-2.5 text-zinc-200 pl-5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal list-outside space-y-1.5 my-2.5 text-zinc-200 pl-5">{children}</ol>,
@@ -149,23 +151,33 @@ export const ChatAgent: React.FC<ChatAgentProps> = () => {
         diagramPreset = 'db-transaction';
       }
 
-      // Check if response contains an ASCII flow string or FLOW: line
-      const asciiFlowMatch = data.text.match(/(?:FLOW:\s*)?(\[[^\]]+\](?:\s*--\([^)]+\)-->\s*\[[^\]]+\])+)/i);
+      // Check if response contains an explicit FLOW: line
+      const asciiFlowMatch = data.text.match(/(?:^|\n)FLOW:\s*(\[[^\]]+\](?:\s*--\([^)]+\)-->\s*\[[^\]]+\])+)/i);
       let extractedFlowString: string | undefined = undefined;
       if (asciiFlowMatch) {
         extractedFlowString = asciiFlowMatch[1].trim();
       }
 
-      // Only create diagrams array if a valid flow string was explicitly generated and verified
+      // Detect meta-questions, follow-ups or confirmation questions (e.g., "T'es sûr...", "Es-tu sûr...")
+      const isMetaQuestion = textLower.includes("t'es sur") || 
+                             textLower.includes("es-tu sur") || 
+                             textLower.includes("es tu sur") || 
+                             textLower.includes("etes-vous sur") || 
+                             textLower.includes("êtes-vous sûr");
+
+      // Only create diagrams array if an explicit FLOW: line was generated and question is not a meta-question
       let diagramsList: any[] | undefined = undefined;
-      if (extractedFlowString && extractedFlowString.length > 5) {
-        diagramsList = [
-          {
-            title: `Schéma Visuel du Job : ${query}`,
-            type: diagramPreset,
-            flow: [extractedFlowString]
-          }
-        ];
+      if (extractedFlowString && !isMetaQuestion) {
+        const compMatches = extractedFlowString.match(/\[[^\]]+\]/g);
+        if (compMatches && compMatches.length >= 2) {
+          diagramsList = [
+            {
+              title: `Schéma éventuel du Job`,
+              type: diagramPreset,
+              flow: [extractedFlowString]
+            }
+          ];
+        }
       }
 
       const agentMsg: ChatMessage = {

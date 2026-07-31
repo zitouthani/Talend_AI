@@ -27,13 +27,13 @@ function getAIClient() {
   });
 }
 
-// Default Knowledge Base featuring Pascal Garcia's Talend Book
+// Default Knowledge Base featuring complete Talend training modules & textbooks
 const DEFAULT_TALEND_BOOKS = [
   {
     id: "talend-basics-pascal-garcia",
-    title: "Formation TALEND for Data Integration – Basics",
-    author: "Pascal GARCIA (Directeur Technique WAPSI / CleverInstitut)",
-    pages: 87,
+    title: "Formation TALEND for Data Integration – Basics & Advanced",
+    author: "Pascal GARCIA CAPILLA (Directeur Technique WAPSI / CleverInstitut)",
+    pages: 117,
     chapters: [
       {
         num: 1,
@@ -51,12 +51,13 @@ Composants clés : tPrejob / tPostjob, tLogRow (mode Basic/Tabular), tFileInputD
         title: "Installation, Prérequis & Allocation Mémoire JVM (-Xms256m, -Xmx1024m)",
         content: `Chapitre 2 (Pages 17-21): Configuration JVM & Performance.
 Allocation mémoire dans le fichier TalendStudio.ini :
--vm C:\\Program Files\\Java\\jdk1.7.0_79\\bin\\javaw.exe
+-vm C:\\Program Files\\Java\\jdk-18.0.1.1\\bin\\javaw.exe
 -vmargs
 -Xms256m (Mémoire vive minimale)
 -Xmx1024m (Mémoire vive maximale)
 -XX:MaxPermSize=256m
 -Dfile.encoding=UTF-8
+Variables d'environnement requises : JAVA_HOME, JDK_HOME, CLASSPATH (jrt-fs.jar).
 Surveillance indispensable de la mémoire pour les composants tSortRow, tAggregateRow et gros Lookups tMap.`
       },
       {
@@ -71,20 +72,21 @@ Transformations ETL, Multiplexage, Démultiplexage, Concaténation.
    - 'Catch output reject' = true : filtre les lignes ne répondant à aucune condition de sortie.
    - 'Catch lookup inner join reject' = true : capture les lignes du Main sans correspondance dans le Lookup.
 5. Table Var : Variables de mapping intermédiaire Java (ex: StringHandling.UPPERCASE(row1.nom)).
-6. Table ErrorReject :errorMessage et errorStackTrace pour audit d'exceptions.`
+6. Table ErrorReject : errorMessage et errorStackTrace pour audit d'exceptions.`
       },
       {
         num: 4,
-        title: "Composants de Transfert, Base de Données & Routines Java Custom",
-        content: `Chapitre 4 (Pages 33-38, 78): Connecteurs DB, FTP & Code Java.
-- Transferts : tFileList (itération sur dossier), tFTPGet, tFTPPut, tFileExist.
-- Base de données : tPostgreSQLInput, tOracleOutput, tDBOutput (Commit Size par défaut 10000, Die on error).
-- Routines Java : Code statique dans Code -> Routines (ex: SecurityUtils.hashSHA256(row1.password) pour le hachage cryptographique).
-- Différences Java : tJava (exécuté 1 fois), tJavaRow (exécuté par ligne), tJavaFlex (Start, Main, End).`
+        title: "Envoi de Mails, Traitements XML, Bulk Loading & Synchronisation",
+        content: `Chapitre 4 (Pages 1-30 TOS DI Advanced):
+- tSendMail : Envoi de courriels textuels ou HTML. Support des templates HTML via tFileInputRaw -> tJavaRow (remplacement __NOMVARIABLE__).
+- Flux XML : tFileInputXML, tXMLMap (arborescences, boucles, attributs), tAdvancedFileOutputXML.
+- Bulk Loading : tOracleOutputBulk, tOracleOutputBulkExec (chargement massif direct/indirect).
+- Variables Globales : tSetGlobalVar, globalMap.put("key", val), ((String)globalMap.get("key")).
+- Synchronisation : tWaitForFile, tWaitForSocket, tWaitForSQLData.`
       },
       {
         num: 5,
-        title: "Orchestration (tPrejob/tPostjob), Triggers & Interception d'Erreurs (tLogCatcher)",
+        title: "Orchestration, Triggers (tPrejob/tPostjob) & Interception d'Erreurs (tLogCatcher)",
         content: `Chapitre 5 (Pages 66-68, 81-84): Robustesse & Supervision.
 - tPrejob : Initialisation garantie (connexions BDD, chargement de contextes).
 - tPostjob : Nettoyage garanti (fermeture de connexions, suppression de fichiers temporaires).
@@ -92,6 +94,238 @@ Transformations ETL, Multiplexage, Démultiplexage, Concaténation.
 - Supervision : tWarn (avertissement), tDie (arrêt d'urgence KO), tLogCatcher (capture automatique d'exceptions Java).
 - Contextes : Chargement dynamique avec tFileInputProperties et tContextLoad.
 - Arborescence serveur recommandée : /input, /work, /temp, /output, /archives.`
+      }
+    ]
+  },
+  {
+    id: "talend-pratique-et-ateliers",
+    title: "Talend par la Pratique – Ateliers Pratiques Jobs 0 à 23",
+    author: "Talend Expert Training Series",
+    pages: 76,
+    chapters: [
+      {
+        num: 1,
+        title: "Ateliers Jobs 0 à 3 : Flux CSV, XML, Schémas & Déclencheurs",
+        content: `Jobs 0 à 3 (Pages 1-22):
+- Job 0 : Création de job, workspaces et référentiel local.
+- Job 1 : Conversion CSV vers XML avec tFileInputDelimited -> tFileOutputXML.
+- Schémas : Schéma Built-In vs Schéma Générique dans Métadonnées.
+- Job 2 : Déclencheurs conditionnels Run If entre tFileExist et tJava (affichage "présent" / "absent").
+- Job 3 : Conversion automatique de types avec tConvertType (Double vers Integer, String vers Date, etc.).`
+      },
+      {
+        num: 2,
+        title: "Ateliers Jobs 5 à 8 : Échantillonnage, Agrégation, Tri & Rejets",
+        content: `Jobs 5 à 8 (Pages 23-30):
+- Job 5 : Échantillonnage tSampleRow (ex: lignes 1, 5, 10-20).
+- Job 6 : Agrégation tAggregateRow (Group by STATE, MAX_SALARY, MIN_SALARY, AVG_SALARY) et tri tSortRow / tAggregateSortedRow.
+- Job 7 : Filtrage de colonnes avec tFilterColumns.
+- Job 8 : Filtrage de lignes tFilterRow (opérateur ET, LastName="Adams", Salary > 6000) et redirection du flux Reject vers tFileOutputDelimited_2.`
+      },
+      {
+        num: 3,
+        title: "Ateliers Jobs 9 à 13 : Variables Globales, Copie de Fichiers & Contextes Implicites",
+        content: `Jobs 9 à 13 (Pages 30-48):
+- Job 9 : Utilisation des variables globales (globalMap.get / put) dans tJava.
+- Job 10 : Création de variables globales avec tSetGlobalVar.
+- Job 11 : Listing tFileList et copie tFileCopy avec gestion OnSubjobError, OnComponentError et tMsgBox.
+- Contexte Implicite : Propriétés du projet -> Chargement implicite d'un contexte depuis fichier .txt / properties.
+- Job 13 : Chargement dynamique de contextes avec tContextLoad.`
+      },
+      {
+        num: 4,
+        title: "Ateliers Jobs 14 à 23 : Supervision, Regex, Levenshtein, tJavaFlex & XML Complexe",
+        content: `Jobs 14 à 23 (Pages 49-76):
+- Job 14 : Supervision avec tWarn, tLoop, tFileExist, tDie et tLogCatcher.
+- Job 15 : Orchestration de jobs via tRunJob et lien OnSubjobOk.
+- Job 16 : Chronométrage de jobs avec tPrejob, tPostjob, tChronometerStart et tChronometerStop.
+- Job 17 : Validation d'emails par regex via tLibraryLoad (jakarta-oro-2.0.8.jar) et tJava.
+- Job 18 : Calcul de distance de Levenshtein entre mots avec tFuzzyMatch.
+- Job 19 : Traitement de flux en 3 sections (Begin, Main, End) avec tJavaFlex.
+- Job 20 : Détection automatique de catégories par poids de véhicules avec tIntervalMatch.
+- Job 21 : Lecture et découpage de fichiers positionnels avec tFileInputPositional.
+- Job 22 : Extraction par expressions régulières complexes avec tFileRegex.
+- Job 23 : Génération XML arborescente complexe avec tAdvancedFileOutputXML.`
+      }
+    ]
+  },
+  {
+    id: "tmap-java-routines",
+    title: "tMap & Fonctions Java dans Talend",
+    author: "Talend Core Architecture Guide",
+    pages: 43,
+    chapters: [
+      {
+        num: 1,
+        title: "Notions Java Incontournables & Routines Système",
+        content: `Chapitre 3 (Pages 1-13):
+- Opérateurs Java : ==, !=, =, test ternaire (condition ? vrai : faux).
+- Nullité : Relational.isNull(var), var == null, var != null.
+- String : "toto".equals(var), var.isEmpty(), var.startsWith("x"), var.contains("x").
+- Routines Système :
+  * Numeric : sequence(), resetSequence(), removeSequence(), random().
+  * Relational : ISNULL(), NOT(), isNull().
+  * StringHandling : ALPHA(), CHANGE(), COUNT(), UPCASE(), DOWNCASE(), TRIM(), LTRIM(), RTRIM(), SUBSTR(), LPAD(), RPAD().
+  * TalendDataGenerator : getFirstName(), getLastName(), getUsCity(), getUsStreet().
+  * TalendDate : addDate(), compareDate(), diffDate(), formatDate(), parseDate(), getCurrentDate().
+  * TalendString : replaceSpecialCharForXML(), removeAccents(), getAsciiRandomString().`
+      },
+      {
+        num: 2,
+        title: "Jointures tMap (Left, Right, Inner, Full Outer) & Routines Custom",
+        content: `Chapitre 3 (Pages 14-36):
+- Job 28 : Jointures auto-référencées Employees / Managers dans tMap.
+- Job 29 : Tri et routage multi-flux conditionnels dans tMap (USA, FRANCE, GERMANY).
+- Job 30 : Expressions Java avancées dans tMap (concaténation, mise en majuscule, augmentation salaire conditionnelle).
+- Job 31 : Left Outer Join vs Right Outer Join (inversion des flux Main et Lookup).
+- Job 32 & 33 : Inner Join multi-tables (Products, Suppliers, Categories) avec capture de rejets (Catch output reject / Catch lookup inner join reject).
+- Job 34 : Jointure rapide avec tJoin.
+- Job 35 : Full Outer Join combinant 2 tMap et un composant tUnite.
+- Job 36 : Routines Java personnalisées dans Repository (ex: routine gestion_stock).`
+      },
+      {
+        num: 3,
+        title: "Résolution d'Erreurs Fréquentes & Extraits Java de Production",
+        content: `Chapitre 3 (Pages 36-43):
+- Erreurs fréquentes :
+  * Data Truncation : dépassement de la longueur définie dans le schéma.
+  * java.lang.NullPointerException : évaluation de valeur nulle dans un test ternaire sans protection.
+  * java.lang.NumberFormatException:null : conversion échouée ou division par zéro.
+  * For input string : mauvais format de nombre ou présence d'en-tête texte dans un champ int.
+- Extraits Java réutilisables :
+  * Comptage de lignes CSV via BufferedReader ou Regex.
+  * Conversion de codes pays ISO 3166-1 alpha-3 vers alpha-2 (via HashMap Java).
+  * Formatage de dates avec TalendDate.formatDate("dd/MM/yyyy", row1.date_col).
+  * Remplacement de texte et sauts de ligne avec tReplace ou routine custom removeLineBreaks().`
+      }
+    ]
+  },
+  {
+    id: "sql-and-databases",
+    title: "Talend & les Bases de Données SQL",
+    author: "Database Integration Manual",
+    pages: 25,
+    chapters: [
+      {
+        num: 1,
+        title: "Généralités SQL & Modèles SQL Système Talend",
+        content: `Chapitre 4 (Pages 1-12):
+- Commandes SQL : DML (SELECT, INSERT, UPDATE, DELETE), DDL (CREATE, ALTER, DROP), DCL (GRANT, REVOKE), TCL (COMMIT, ROLLBACK).
+- Synthaxe : SELECT, Projection, Commentaires (-- et /* */), Filtres AND/OR/IN/LIKE/BETWEEN/IS/CASE, Jointures (INNER, CROSS, LEFT, RIGHT, FULL, SELF, NATURAL), Agrégations (SUM, AVG, COUNT, MAX, MIN, STD), ORDER BY, UNION vs UNION ALL, ANY, ALL.
+- Modèles SQL Système Talend : Modèles réutilisables pour Delta Lake, Generic (ODBC), Hive, MySQL, Netezza, Oracle, ParAccel, Snowflake, Teradata, Vertica.`
+      },
+      {
+        num: 2,
+        title: "Ateliers DB Pratiques & Chargement Massif (Bulk Loading)",
+        content: `Chapitre 4 (Pages 13-25):
+- Job 37 : Connexion à une base de données dans le Référentiel.
+- Job 38 : Importation et récupération de schémas de tables BDD.
+- Job 39 : Jointure entre fichier Excel et table BDD via tMap.
+- Job 40 (BDD_EXTRACTION) : Extraction MySQL avec tMysqlConnection, tMysqlInput et tMysqlClose.
+- Job 41 (CONNECT_AND_CHARGE) : Alimentation parallèle Oracle et MySQL avec tFileInputDelimited et tMysqlOutput / tOracleOutput.
+- Job 42 (JOIN_MULTI_BASE) : Jointures entre bases de données hétérogènes (Oracle + MySQL).
+- Chargement Bulk :
+  * Indirect : tOracleInput -> tMap -> tOracleOutputBulk -> tDBBulkExec (génération de fichier bulk puis insertion par paquets).
+  * Direct : tDBOutputBulkExec (construction du fichier bulk et chargement massif combinés).`
+      }
+    ]
+  },
+  {
+    id: "examen-pratique-dwh",
+    title: "Examen Pratique Entrepôt de Données (DWH) & Certification 100 Q&A",
+    author: "Talend Certification Board",
+    pages: 44,
+    chapters: [
+      {
+        num: 1,
+        title: "Spécifications & Architecture de l'Atelier DWH 3 Tiers",
+        content: `Chapitre 5 (Pages 1-21):
+- Architecture 3 Tiers : Sources (SRC) -> Staging (STG) -> Cibles (DWH, Refus, Alertes).
+- Tables Sources : Données de référence Client, Offre, Direction, Distance, Produit & Fait Appels.
+- Phase 1 (SRC vers STG) : Nettoyage, filtres d'intégrité, règles nvl(), passage en majuscules UPPER(), détection d'alertes (format numéro de téléphone) et rejets (IDs manquants).
+- Phase 2 (STG vers DWH) : Enrichissement, calcul du trimestre (YYYYTT), calcul du réseau (FIXE/GSM), agrégations mensuelles DWH_AGG_APPEL_PRD et DWH_AGG_APPEL_DISTANCE.`
+      },
+      {
+        num: 2,
+        title: "Les 100 Questions de Certification & Entretiens Techniques",
+        content: `Chapitre 5 Bis (Pages 1-23):
+Questions-clés de l'examen Talend Data Integration Certified Developer :
+- Version gratuite : Talend Open Studio (TOS). Lancement en Octobre 2006 en Java.
+- Référentiel vs Workspace vs Projet : Référentiel = stockage central ; Workspace = dossier physique ; Projet = ensemble d'éléments (Jobs, Contextes, Code, Metadata).
+- ETL vs ELT : ETL fait les transformations dans un moteur dédié ; ELT délègue les transformations au SGBD cible.
+- Liens Row : Main, Lookup, Rejects, Output, Uniques, Duplicates, Iterate.
+- Triggers : OnSubjobOK, OnSubjobError, OnComponentOK, OnComponentError, RunIf.
+- tPrejob / tPostjob : Exécution inconditionnelle garantie avant/après le job principal.
+- tMap vs tJoin : tMap permet des expressions complexes, filtres et sorties multiples ; tJoin est une jointure binaire simple.
+- tAggregateRow vs tAggregateSortedRow : tAggregateSortedRow nécessite un flux préalablement trié (tSortRow) pour économiser la mémoire.`
+      }
+    ]
+  },
+  {
+    id: "travail-collaboratif-et-bonnes-pratiques",
+    title: "Travail Collaboratif (Git, SSH, Linux, PowerShell) & Bonnes Pratiques",
+    author: "DevOps & Best Practices Guide",
+    pages: 28,
+    chapters: [
+      {
+        num: 1,
+        title: "Outils Collaboratifs : Git, SSH, PuTTY, Linux & PowerShell",
+        content: `Chapitres 7 (Pages 1-21):
+- SSH & PuTTY : Connexion distante sécurisée, tunnels SSH (port 5901 pour interface graphique).
+- Linux : ls -al, cd, pwd, mkdir, rm -rf, cp -r, mv, chmod (777, 755, 644, 600), grep -r, locate, ping, wget, ps aux, top, kill, tar czf / xzf.
+- Git : git init, clone, add, commit -m, diff, reset, rm, log, status, branch, checkout, merge, push, pull.
+- PowerShell : -eq, -ne, -gt, -ge, -lt, -in, -contains, -replace, -and, -or, -xor, variables ($var), verbes (Get, Set, New), boucles foreach, switch.`
+      },
+      {
+        num: 2,
+        title: "Bonnes Pratiques & Conventions Officielles de Développement Talend",
+        content: `Chapitre 8 (Pages 1-7):
+- Disposition graphique des Jobs :
+  * Flux de données horizontaux (de gauche à droite).
+  * Lookups verticaux pointant vers le haut du tMap.
+  * Rejets verticaux vers le bas.
+  * Triggers OnSubjobOK / ComponentOK verticaux (de haut en bas).
+- Performance :
+  * Utiliser des connexions séparées pour Input et Output.
+  * Privilégier Extended Insert et Bulk Insert pour les fortes volumétries.
+  * Ne JAMAIS exécuter SELECT * dans les tMySQLInput / tOracleInput.
+  * Activer l'option enableStream pour les gros volumes.
+- Normes de Nommage :
+  * Répertoires métier : DWH06_Scolarite
+  * Répertoires application : DWH06b_APOGEE
+  * Jobs : RH01_STATUTAIRES
+  * Contextes : CNX_ (connexions), VCOM_ (commun), VAR_ (domaines).`
+      }
+    ]
+  },
+  {
+    id: "plsql-oracle-integration",
+    title: "Integration PL/SQL Oracle & Dictionnaire Complet des Composants",
+    author: "Oracle PL/SQL & Talend Component Reference",
+    pages: 150,
+    chapters: [
+      {
+        num: 1,
+        title: "Langage PL/SQL Oracle : Blocs, Curseurs, Bulk Collect & TP Corrélés",
+        content: `Chapitre 09 (Pages 1-42 PL/SQL):
+- Structure de Bloc PL/SQL : DECLARE (optionnel), BEGIN (exécutable), EXCEPTION (erreurs), END;.
+- Types & Variables : %ROWTYPE, %TYPE, CONSTANT, VARRAY, SUBTYPE.
+- Affichage : SET SERVEROUTPUT ON; DBMS_OUTPUT.PUT_LINE('texte ' || variable);.
+- Curseur & Boucles : CURSOR cur_name IS SELECT ..., OPEN, FETCH bulk collect into, CLOSE, %ISOPEN, %FOUND, %NOTFOUND, %ROWCOUNT, FOR loop.
+- Instructions : UPDATE avec RETURNING variable, Boucle WHILE, Tableaux associatifs (index-by tables).
+- Travaux Pratiques résolus : Fonctions nbr_cmd_cl, sal_annuel(NVL(comission,0)), sum_sal(), détection d'alertes de stock articles, procédures d'augmentation salariale.`
+      },
+      {
+        num: 2,
+        title: "Guide Exhaustif des Composants Talend par Catégories",
+        content: `Chapitre 10 (Pages 1-108 Composants):
+Catalogue complet de la palette Talend :
+- Big Data : tBigQuery*, tGSBucket*, tGSCopy, tGSPut, tHiveConnection, tHiveRow.
+- Business & CRM : tBonita*, tJIRA*, tLDAP*, tMarketo*, tMicrosoftCrm*, tNetsuite*, tSalesforce*, tServiceNow*.
+- Business Intelligence & Cloud : tSplunkEventCollector, tBarChart, t*SCD, tAmazonAurora*, tAzureStorage*, tAzureSynapse*, tDropbox*, tGoogleDrive*, tRedshift*, tSnowflake*.
+- Custom Code & Scripts : tGroovy, tJava (exécuté 1 fois), tJavaRow (par ligne), tJavaFlex (Begin/Main/End), tLibraryLoad, tSetGlobalVar.
+- Base de données : Connecteurs Access, AS400, DB2, Firebird, Greenplum, Informix, JDBC, MSSql, MySQL, Oracle, PostgreSQL, SQLite, Sybase, Teradata, Vertica.
+- Processing & Transformations : tAggregateRow, tAggregateSortedRow, tConvertType, tDenormalize, tExtractJSONFields, tExtractXMLField, tFilterColumns, tFilterRow, tJoin, tMap, tNormalize, tReplace, tReplicate, tSampleRow, tSortRow, tSplitRow, tUniqRow, tUnite.`
       }
     ]
   }
@@ -150,21 +384,22 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const systemPrompt = `Tu es "TalendIA Agent", un assistant expert en intégration de données, ETL et architecture Talend.
-Ton rôle est de répondre de façon épurée, directe et hautement professionnelle aux questions sur Talend en t'appuyant sur l'ensemble de la base de connaissances et de code source.
 
-CONSIGNES STRICTES DE RÉPONSE :
-1. NE JAMAIS citer de nom d'auteur, de titre de manuel, de numéro de page ou de source documentaire dans tes réponses. Va directement au fait.
-2. Fournir des EXEMPLES DE CODE CONCRETS (ex: expressions tMap Java, requêtes SQL dynamiques, routines Java, requêtes JSONPath) dans des blocs de code Markdown \`\`\`java / \`\`\`sql / \`\`\`json.
-3. Si la question concerne un flux ou un composant (comme tMap, tRESTRequest, tParallelize, tPrejob/tPostjob, routines Java), décris le fonctionnement du flux de job Talend.
-4. Réponds en français clair, structuré avec des titres et des puces, sans bavardage superflu.
-5. RÈGLE VÉRIFIÉE SUR LES SCHÉMAS FLOW : Génère une ligne FLOW uniquement si un flux de composants Talend est réellement et rigoureusement concerné par la question posée. Vérifie scrupuleusement l'exactitude des composants et des types de liens. Si la question est conceptuelle, générale ou sans flux de composants spécifique, NE GÉNÈRE PAS de ligne FLOW.
-Format exact de la ligne FLOW si applicable :
-FLOW: [Composant1] --(TypeLien)--> [Composant2] --(TypeLien)--> [Composant3]
-Exemple pour SCD : FLOW: [tFileInputDelimited_1] --(row1 Main)--> [tMap_Keys] --(Main)--> [tDBSCD_1] --(SCD Output)--> [tDBOutput_DimClient]
-Exemple pour tMap : FLOW: [tFileInputDelimited_1] --(row1 Main)--> [tMap_1] --(out1 Main)--> [tDBOutput_1] --(Reject)--> [tLogRow_Rejects]
-Exemple pour tParallelize : FLOW: [tParallelize_1] --(Parallel 1)--> [tRunJob_Clients] --(OnSubjobOk)--> [tPostjob_Sync]
-6. Lorsque tu détailles un composant Talend, donne TOUJOURS la liste exacte et ordonnée des paramètres clés (Basic Settings -> Advanced Settings -> Schema), leurs descriptions précises et leurs valeurs recommandées.
-7. Si la question posée ne figure pas dans le contexte documentaire fourni ou nécessite des informations Web récentes/externes, utilise la recherche Web (Google Search Grounding) pour récupérer et synthétiser l'information exacte.
+CONSIGNES STRICTES DE RÉPONSE ET DE STRUCTURE :
+1. RÉPONSES SUCCINCTES ET CIBLÉES : Va immédiatement à l'essentiel. Bannis toute formule d'introduction ou de politesse inutile ainsi que les bavardages ou conclusions superflues. Sois extrêmement concis, précis et directement axé sur la solution technique exacte.
+2. DÉLIMITATION NETTE DES DIFFÉRENTES MÉTHODES : S'il existe plusieurs approches ou méthodes pour traiter le problème (ex: Méthode 1 vs Méthode 2 vs Méthode 3), sépare-les TOUJOURS de manière visuelle et structurée avec des titres explicites (ex: "### 📌 Méthode 1 : [Nom de la méthode]") et des séparateurs horizontaux ("---"). Pour chaque méthode, indique de façon concise : le fonctionnement, le code/composants requis, et le cas d'usage recommandé.
+3. EXEMPLES DE CODE CONCRETS : Fournis des extraits de code réels et prêts à l'emploi (expressions tMap Java, requêtes SQL, routines Java, JSONPath) dans des blocs Markdown de code (\`\`\`java, \`\`\`sql, \`\`\`json).
+4. ABSENCE DE CITATION DE SOURCE : Ne cite jamais de noms d'auteurs, manuels ou références de documentation dans la réponse.
+5. RÈGLE STRICTE SUR LES SCHÉMAS FLOW (NE PAS GÉNÉRER SUR DES QUESTIONS DE CODE / CONFIG / MÉTA) :
+   - GÉNÈRE UNE LIGNE FLOW UNIQUEMENT SI la question de l'utilisateur demande explicitement ou concerne directement un enchaînement de plusieurs composants ETL dans un Job Talend.
+   - NE GÉNÈRE EN AUCUN CAS DE LIGNE FLOW (INTERDICTION STRICTE) pour :
+     * Les questions sur du code Java, des routines Java (ex: SHA-256, StringUtils, routines système).
+     * Les configurations système, fichiers .ini ou arguments JVM (ex: -Xmx1024m, -Xms256m).
+     * Les questions de relance, de vérification ou méta (ex: "T'es sûr du schéma ?", "Est-ce correct ?", "Pourquoi...").
+     * Les définitions ou explications théoriques sans flux de composants spécifique.
+   Format exact de la ligne FLOW si et SEULEMENT si un flux de composants ETL est réellement concerné :
+   FLOW: [Composant1] --(TypeLien)--> [Composant2] --(TypeLien)--> [Composant3]
+6. PARAMÈTRES DE COMPOSANTS : Lorsque tu détailles un composant Talend dans un flux ETL, donne de manière concise la liste des paramètres clés (Basic Settings -> Advanced Settings -> Schema) et leurs valeurs recommandées.
 
 CONTEXTE TECHNIQUE EN VIGUEUR :
 ${contextText}`;
@@ -207,7 +442,7 @@ ${contextText}`;
       responseText = response.text || "";
       candidate = response.candidates?.[0];
     } catch (primaryErr: any) {
-      console.warn("Attempt with Google Search grounding failed, retrying standard generation:", primaryErr?.message || primaryErr);
+      console.log("Search grounding call notice: falling back to standard generation.");
       // Fallback attempt without tools if search grounding or tool call fails
       try {
         const fallbackResponse = await ai.models.generateContent({
