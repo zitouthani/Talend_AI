@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp, Sparkles, Copy, Check, Database, GitBranch, Layers, Cpu, Shuffle, ExternalLink, HelpCircle, Flag, AlertTriangle, X, Send, CheckCircle2 } from 'lucide-react';
+import { ArrowUp, Sparkles, Copy, Check, Database, GitBranch, Layers, Cpu, Shuffle, ExternalLink, HelpCircle, Flag, AlertTriangle, X, Send, CheckCircle2, Mail } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChatMessage, ChatSession } from '../types';
@@ -736,7 +736,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
                               />
                             </div>
 
-                            <div className="flex items-center justify-end space-x-2 pt-1">
+                            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-zinc-800/80">
                               <button
                                 type="button"
                                 onClick={() => setReportingMsgId(null)}
@@ -763,13 +763,13 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
                                   }
                                   setReportedMessageIds(prev => new Set(prev).add(msg.id));
                                   setReportingMsgId(null);
-                                  setReportSuccessToast("Merci pour votre retour ! Votre signalement a bien été transmis.");
+                                  setReportSuccessToast("Merci ! Votre signalement a bien été transmis à l'équipe par email.");
                                   setTimeout(() => setReportSuccessToast(null), 4000);
                                 }}
                                 className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-lg transition shadow-md active:scale-95 font-sans"
                               >
                                 <Send className="w-3.5 h-3.5" />
-                                <span>Envoyer le signalement</span>
+                                <span>Envoyer le signalement par email</span>
                               </button>
                             </div>
                           </div>

@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "ErrorReport": {
+      "title": "ErrorReport",
+      "description": "User reported errors and feedback",
+      "type": "object",
+      "properties": {
+        "messageId": { "type": "string" },
+        "category": { "type": "string" },
+        "details": { "type": "string" },
+        "messageSnippet": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["messageId", "category", "timestamp"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account information and authentication profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "provider": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "lastLogin": { "type": "string" }
+      },
+      "required": ["uid", "email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/error_reports/{reportId}": {
+      "schema": { "$ref": "#/entities/ErrorReport" },
+      "description": "Collection of user-submitted error reports"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile collection indexed by Firebase Auth UID"
+    }
+  }
+}

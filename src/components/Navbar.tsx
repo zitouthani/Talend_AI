@@ -1,20 +1,29 @@
 import React from 'react';
-import { Plus, Sparkles, History, PanelLeft } from 'lucide-react';
+import { Plus, Sparkles, PanelLeft, User as UserIcon } from 'lucide-react';
+import { User } from 'firebase/auth';
 
 interface NavbarProps {
   onNewChat: () => void;
   onToggleHistory: () => void;
   isHistoryOpen: boolean;
+  currentUser: User | null;
+  onOpenAuth: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onNewChat, onToggleHistory, isHistoryOpen }) => {
+export const Navbar: React.FC<NavbarProps> = ({ 
+  onNewChat, 
+  onToggleHistory, 
+  isHistoryOpen,
+  currentUser,
+  onOpenAuth
+}) => {
   return (
     <header className="bg-[#171717] border-b border-zinc-800/80 text-zinc-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4">
         <div className="relative flex items-center justify-between h-14">
           
           {/* Left: History toggle */}
-          <div className="flex items-center z-10">
+          <div className="flex items-center space-x-2 z-10">
             <button
               type="button"
               onClick={onToggleHistory}
@@ -30,14 +39,29 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewChat, onToggleHistory, isHi
             </button>
           </div>
 
-          {/* Center: Brand Logo & Title (Centered in mobile & desktop) */}
-          <div className="absolute left-1/2 -translate-x-1/2 -ml-[12px] flex items-center space-x-2 px-2 py-1.5 font-sans font-medium">
+          {/* Center: Brand Logo & Title */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-2 px-2 py-1.5 font-sans font-medium">
             <Sparkles className="w-4.5 h-4.5 text-cyan-400 shrink-0" />
             <span className="font-semibold text-white tracking-tight text-sm sm:text-base">Talend AI</span>
           </div>
 
-          {/* Right: New Chat Button */}
-          <div className="flex items-center z-10">
+          {/* Right: Account & New Chat Buttons */}
+          <div className="flex items-center space-x-2 z-10">
+            <button
+              onClick={onOpenAuth}
+              title={currentUser ? `Connecté (${currentUser.email})` : "Se connecter"}
+              className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${
+                currentUser 
+                  ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20' 
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+              }`}
+            >
+              <UserIcon className="w-3.5 h-3.5" />
+              <span className="hidden md:inline max-w-[120px] truncate">
+                {currentUser ? (currentUser.displayName || currentUser.email) : 'Connexion'}
+              </span>
+            </button>
+
             <button
               onClick={onNewChat}
               title="Nouvelle discussion"
@@ -54,4 +78,5 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewChat, onToggleHistory, isHi
     </header>
   );
 };
+
 
