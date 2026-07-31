@@ -30,6 +30,14 @@ export interface ChatMessage {
   diagrams?: { title: string; type: string; flow: string[] }[];
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+}
+
 export interface ToolOption {
   id: string;
   name: string;

@@ -3,17 +3,30 @@ import { Navbar } from './components/Navbar';
 import { ChatAgent } from './components/ChatAgent';
 
 export default function App() {
-  const [resetKey, setResetChatKey] = useState(0);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [newChatTrigger, setNewChatTrigger] = useState(0);
 
-  const handleResetChat = () => {
-    setResetChatKey(prev => prev + 1);
+  const handleNewChat = () => {
+    setNewChatTrigger(prev => prev + 1);
+  };
+
+  const handleToggleHistory = () => {
+    setIsHistoryOpen(prev => !prev);
   };
 
   return (
-    <div className="min-h-screen bg-[#212121] text-zinc-100 font-sans antialiased selection:bg-zinc-700 selection:text-white">
-      <Navbar onResetChat={handleResetChat} />
-      <main>
-        <ChatAgent key={resetKey} />
+    <div className="min-h-screen bg-[#212121] text-zinc-100 font-sans antialiased selection:bg-zinc-700 selection:text-white flex flex-col h-screen overflow-hidden">
+      <Navbar 
+        onNewChat={handleNewChat}
+        onToggleHistory={handleToggleHistory}
+        isHistoryOpen={isHistoryOpen}
+      />
+      <main className="flex-1 flex overflow-hidden relative">
+        <ChatAgent 
+          isHistoryOpen={isHistoryOpen}
+          setIsHistoryOpen={setIsHistoryOpen}
+          newChatTrigger={newChatTrigger}
+        />
       </main>
     </div>
   );

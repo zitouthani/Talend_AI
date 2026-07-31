@@ -385,12 +385,30 @@ app.post("/api/chat", async (req, res) => {
 
     const systemPrompt = `Tu es "TalendIA Agent", un assistant expert en intégration de données, ETL et architecture Talend.
 
+RÈGLE ABSOLUE ET STRICTE SUR LE DOMAINE D'INTERVENTION :
+- Tu réponds EXCLUSIVEMENT aux questions qui concernent directement Talend, l'ETL, l'intégration de données avec Talend, le développement Java dans le cadre de Talend (routines, tMap, composants), le SQL utilisé dans Talend, ou les outils/pratiques directement associés à Talend.
+- Si la question ou le message de l'utilisateur NE CONCERNE PAS directement Talend ou son écosystème ETL (par exemple : questions de culture générale, recettes de cuisine, conseils d'hébergement web ou déploiement généraliste type Render/AWS/Netlify/Vercel sans rapport avec Talend, mathématiques générales, codage hors Talend, discussions hors sujet, etc.), tu DOIS STRICTEMENT REFUSER d'y répondre.
+- En cas de refus pour sujet hors Talend, réponds UNIQUEMENT et exactement :
+  « Désolé, je suis un assistant spécialisé exclusivement sur Talend. Je ne peux répondre qu'aux questions en relation directe avec Talend et son écosystème ETL. »
+- Ne donne aucun conseil, explication ou solution pour les questions hors du domaine Talend.
+
 CONSIGNES STRICTES DE RÉPONSE ET DE STRUCTURE :
-1. RÉPONSES SUCCINCTES ET CIBLÉES : Va immédiatement à l'essentiel. Bannis toute formule d'introduction ou de politesse inutile ainsi que les bavardages ou conclusions superflues. Sois extrêmement concis, précis et directement axé sur la solution technique exacte.
-2. DÉLIMITATION NETTE DES DIFFÉRENTES MÉTHODES : S'il existe plusieurs approches ou méthodes pour traiter le problème (ex: Méthode 1 vs Méthode 2 vs Méthode 3), sépare-les TOUJOURS de manière visuelle et structurée avec des titres explicites (ex: "### 📌 Méthode 1 : [Nom de la méthode]") et des séparateurs horizontaux ("---"). Pour chaque méthode, indique de façon concise : le fonctionnement, le code/composants requis, et le cas d'usage recommandé.
-3. EXEMPLES DE CODE CONCRETS : Fournis des extraits de code réels et prêts à l'emploi (expressions tMap Java, requêtes SQL, routines Java, JSONPath) dans des blocs Markdown de code (\`\`\`java, \`\`\`sql, \`\`\`json).
-4. ABSENCE DE CITATION DE SOURCE : Ne cite jamais de noms d'auteurs, manuels ou références de documentation dans la réponse.
-5. RÈGLE STRICTE SUR LES SCHÉMAS FLOW (NE PAS GÉNÉRER SUR DES QUESTIONS DE CODE / CONFIG / MÉTA) :
+1. REFORMULATION SYSTÉMATIQUE ET OBLIGATOIRE DE LA QUESTION :
+   - Tout au début de ta réponse (sur la toute première ligne), tu DOIS TOUJOURS reformuler clairement et précisément la demande de l'utilisateur sous la forme :
+     **Question reformulée :** [Reformulation claire, professionnelle et synthétique de la problématique Talend posée]
+   - Laisse ensuite une ligne vide avant de dérouler l'explication technique.
+
+2. RIGUEUR ET VÉRIFICATION EXHAUSTIVE DE L'EXACTITUDE TECHNIQUE :
+   - Assure-toi avec une certitude absolue de la justesse technique de la réponse (nom exact des composants Talend, syntaxe Java, paramètres de la JVM, options tMap, gestion des schémas et des flux) avant d'exposer la solution. Prends le temps nécessaire pour délivrer une réponse irréprochable et vérifiée.
+
+3. ARCHITECTURE GRAPHRAG (RETRIEVAL AUGMENTED GENERATION BASÉ SUR LES GRAPHES DE COMPOSANTS) :
+   - Tu fonctionnes comme un système GraphRAG pour Talend : tu analyses les composants comme des nœuds d'un graphe d'ETL et leurs liaisons (Main, Iterate, OnSubjobOk, OnComponentOk, Filter, Reject) comme des arêtes orientées.
+   - Utilise cette représentation en graphe de connaissances pour relier précisément la logique métier aux dépendances de données et aux structures de schémas (Input -> Transform -> Output).
+
+4. DÉLIMITATION NETTE DES DIFFÉRENTES MÉTHODES : S'il existe plusieurs approches ou méthodes pour traiter le problème (ex: Méthode 1 vs Méthode 2 vs Méthode 3), sépare-les TOUJOURS de manière visuelle et structurée avec des titres explicites (ex: "### 📌 Méthode 1 : [Nom de la méthode]") et des séparateurs horizontaux ("---"). Pour chaque méthode, indique de façon concise : le fonctionnement, le code/composants requis, et le cas d'usage recommandé.
+4. EXEMPLES DE CODE CONCRETS : Fournis des extraits de code réels et prêts à l'emploi (expressions tMap Java, requêtes SQL, routines Java, JSONPath) dans des blocs Markdown de code (\`\`\`java, \`\`\`sql, \`\`\`json).
+5. ABSENCE DE CITATION DE SOURCE : Ne cite jamais de noms d'auteurs, manuels ou références de documentation dans la réponse.
+6. RÈGLE STRICTE SUR LES SCHÉMAS FLOW (NE PAS GÉNÉRER SUR DES QUESTIONS DE CODE / CONFIG / MÉTA) :
    - GÉNÈRE UNE LIGNE FLOW UNIQUEMENT SI la question de l'utilisateur demande explicitement ou concerne directement un enchaînement de plusieurs composants ETL dans un Job Talend.
    - NE GÉNÈRE EN AUCUN CAS DE LIGNE FLOW (INTERDICTION STRICTE) pour :
      * Les questions sur du code Java, des routines Java (ex: SHA-256, StringUtils, routines système).
@@ -399,7 +417,10 @@ CONSIGNES STRICTES DE RÉPONSE ET DE STRUCTURE :
      * Les définitions ou explications théoriques sans flux de composants spécifique.
    Format exact de la ligne FLOW si et SEULEMENT si un flux de composants ETL est réellement concerné :
    FLOW: [Composant1] --(TypeLien)--> [Composant2] --(TypeLien)--> [Composant3]
-6. PARAMÈTRES DE COMPOSANTS : Lorsque tu détailles un composant Talend dans un flux ETL, donne de manière concise la liste des paramètres clés (Basic Settings -> Advanced Settings -> Schema) et leurs valeurs recommandées.
+7. PARAMÈTRES DE COMPOSANTS : Lorsque tu détailles un composant Talend dans un flux ETL, donne de manière concise la liste des paramètres clés (Basic Settings -> Advanced Settings -> Schema) et leurs valeurs recommandées.
+8. VRAIS TABLEAUX MARKDOWN : Si tu génères un tableau (comparaisons, types de données, paramètres), utilise EXCLUSIVEMENT la vraie syntaxe Markdown de tableau GFM ('| En-tête 1 | En-tête 2 |\n|---|---|'). Ne génère JAMAIS de faux tableaux avec des ||| ou du texte décalé.
+9. CITATIONS ET SOURCES WEB : Si la réponse provient d'une recherche web ou de documentation en ligne, fournis TOUJOURS les liens clairs au format Markdown ('[Titre du document/site](URL)').
+10. QUESTIONS COMPLÉMENTAIRES SUGGÉRÉES : Termine TOUJOURS la réponse par une section exactement intitulée '### 💡 Questions complémentaires suggérées :' contenant 2 à 3 questions à puces ('- ... ?') en rapport avec le sujet pour aider l'utilisateur à aller plus loin.
 
 CONTEXTE TECHNIQUE EN VIGUEUR :
 ${contextText}`;
@@ -428,42 +449,195 @@ ${contextText}`;
     let responseText = "";
     let candidate: any = null;
 
-    try {
-      // Primary attempt with Google Search Grounding
-      const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: formattedContents,
-        config: {
+    const modelsToTry = [
+      { name: "gemini-3.6-flash", useSearch: true },
+      { name: "gemini-3.6-flash", useSearch: false },
+      { name: "gemini-3.1-flash-lite", useSearch: false },
+      { name: "gemini-flash-latest", useSearch: false }
+    ];
+
+    for (const mConfig of modelsToTry) {
+      try {
+        const configObj: any = {
           systemInstruction: systemPrompt,
           temperature: 0.2,
-          tools: [{ googleSearch: {} }],
+        };
+        if (mConfig.useSearch) {
+          configObj.tools = [{ googleSearch: {} }];
+        }
+
+        const resObj = await ai.models.generateContent({
+          model: mConfig.name,
+          contents: formattedContents,
+          config: configObj
+        });
+
+        if (resObj && resObj.text) {
+          responseText = resObj.text;
+          candidate = resObj.candidates?.[0];
+          break; // Success!
+        }
+      } catch (err: any) {
+        console.warn(`Attempt failed with model ${mConfig.name} (search=${mConfig.useSearch}):`, err?.message || err);
+      }
+    }
+
+    // Process grounding metadata for web sources if search was used
+    if (candidate && (candidate.groundingMetadata || candidate.grounding_metadata)) {
+      const gMeta = candidate.groundingMetadata || candidate.grounding_metadata;
+      const chunks = gMeta.groundingChunks || gMeta.grounding_chunks || [];
+      const sourcesMap = new Map<string, string>();
+
+      chunks.forEach((chunk: any) => {
+        const web = chunk.web || chunk.web_search || {};
+        if (web?.uri) {
+          sourcesMap.set(web.uri, web.title || web.uri);
         }
       });
-      responseText = response.text || "";
-      candidate = response.candidates?.[0];
-    } catch (primaryErr: any) {
-      console.log("Search grounding call notice: falling back to standard generation.");
-      // Fallback attempt without tools if search grounding or tool call fails
-      try {
-        const fallbackResponse = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
-          contents: formattedContents,
-          config: {
-            systemInstruction: systemPrompt,
-            temperature: 0.2,
-          }
+
+      if (sourcesMap.size > 0 && !responseText.includes("### 🌐 Sources")) {
+        let sourceSection = "\n\n---\n### 🌐 Sources et Références Web :\n";
+        sourcesMap.forEach((title, uri) => {
+          sourceSection += `- [${title}](${uri})\n`;
         });
-        responseText = fallbackResponse.text || "";
-        candidate = fallbackResponse.candidates?.[0];
-      } catch (fallbackErr: any) {
-        const errStr = String(fallbackErr?.message || fallbackErr);
-        if (errStr.includes("429") || errStr.includes("RESOURCE_EXHAUSTED") || errStr.includes("quota")) {
-          res.json({
-            text: "⚠️ **Quota de requêtes API temporairement atteint (429 Quota Exceeded).**\n\nLe quota du service de l'API Gemini a été atteint. Veuillez patienter une minute avant de poser votre prochaine question."
-          });
-          return;
+        if (responseText.includes("### 💡 Questions complémentaires")) {
+          responseText = responseText.replace("### 💡 Questions complémentaires", `${sourceSection}\n### 💡 Questions complémentaires`);
+        } else {
+          responseText += sourceSection;
         }
-        throw fallbackErr;
+      }
+    }
+
+    // Fallback if all API calls failed due to rate limits / 429 quota
+    if (!responseText) {
+      const textLower = message.toLowerCase();
+      
+      // Strict check for off-topic non-Talend queries
+      const isTalendTopic = textLower.includes("talend") || 
+                            textLower.includes("tmap") || 
+                            textLower.includes("job") || 
+                            textLower.includes("etl") || 
+                            textLower.includes("tdbscd") || 
+                            textLower.includes("scd") || 
+                            textLower.includes("tparallelize") || 
+                            textLower.includes("tfilelist") || 
+                            textLower.includes("tlogrow") || 
+                            textLower.includes("tinput") || 
+                            textLower.includes("toutput") || 
+                            textLower.includes("routine") || 
+                            textLower.includes("jvm") || 
+                            textLower.includes("xmx") || 
+                            textLower.includes("subjob") || 
+                            textLower.includes("trunjob") || 
+                            textLower.includes("join") || 
+                            textLower.includes("reject") || 
+                            textLower.includes("flow") || 
+                            textLower.includes("flux") || 
+                            textLower.includes("composant") || 
+                            textLower.includes("chaine") || 
+                            textLower.includes("base de données") || 
+                            textLower.includes("sql") || 
+                            textLower.includes("contexte") || 
+                            textLower.includes("variable");
+
+      if (!isTalendTopic) {
+        res.json({
+          text: "Désolé, je suis un assistant spécialisé exclusivement sur Talend. Je ne peux répondre qu'aux questions en relation directe avec Talend et son écosystème ETL."
+        });
+        return;
+      }
+
+      // Generate instant offline fallback response for Talend topics during 429 quota spikes
+      const reformIntro = `**Question reformulée :** ${message.trim()}\n\n`;
+
+      if (textLower.includes("scd") || textLower.includes("dimension") || textLower.includes("tdbscd")) {
+        responseText = reformIntro + `### 📌 Méthode 1 : Composant tDBSCD (Historisation Automatisée)
+FLOW: [tDBInput_Ref] --(Main)--> [tDBSCD_Customer]
+
+**1. Fonctionnement :**
+Le composant **tDBSCD** gère la mise à jour des dimensions à évolution lente (Type 1 et Type 2) sans écrire de requête SQL complexe.
+
+**2. Paramètres clés :**
+- **Basic Settings -> SCD Management :**
+  - **Source Keys :** Identifiant métier (ex: \`customer_id\`).
+  - **Type 1 Fields :** Champs écrasés sans mémoire (ex: \`email\`, \`telephone\`).
+  - **Type 2 Fields :** Champs historisés générant une nouvelle ligne avec versioning (ex: \`adresse\`, \`statut\`).
+  - **Version & Date Fields :** Activer \`scd_start\`, \`scd_end\`, \`scd_active\` (1/0) et \`scd_version\`.
+
+---
+
+### 📌 Méthode 2 : tMap avec Jointure et Détection de Changement
+FLOW: [tDBInput_Source] --(Main)--> [tMap_Compare] --(Main)--> [tDBOutput_Insert]
+
+**1. Fonctionnement :**
+Permet un contrôle total du versioning par comparaison de hash MD5 ou de champs spécifiques.`;
+      } else if (textLower.includes("parallel") || textLower.includes("parallèle") || textLower.includes("tparallelize")) {
+        responseText = reformIntro + `### 📌 Méthode 1 : Orchestration avec tParallelize
+FLOW: [tParallelize] --(Parallelize)--> [tRunJob_Sub1]
+
+**1. Fonctionnement :**
+Le composant **tParallelize** permet de lancer plusieurs sous-jobs en parallèle sur des threads distincts.
+
+**2. Paramètres clés :**
+- **Basic Settings -> Parallel execution :** Cocher la branche de démarrage parallèle.
+- **Synchronisation (Wait for all) :** Utiliser la sortie \`Synchronize\` vers un composant final de clôture.`;
+      } else if (textLower.includes("routine") || textLower.includes("java") || textLower.includes("sha256") || textLower.includes("hash")) {
+        responseText = reformIntro + `### 📌 Méthode 1 : Routine Java SHA-256 Personnalisée
+
+\`\`\`java
+package routines;
+
+import java.security.MessageDigest;
+
+public class TalendUtils {
+    public static String getSHA256(String input) {
+        if (input == null) return null;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+}
+\`\`\`
+
+**Utilisation dans tMap :**
+\`routines.TalendUtils.getSHA256(row1.user_email)\``;
+      } else if (textLower.includes("xmx") || textLower.includes("memoire") || textLower.includes("mémoire") || textLower.includes("jvm")) {
+        responseText = reformIntro + `### 📌 Configuration des Arguments JVM (-Xmx / -Xms)
+
+**1. Emplacement du paramétrage :**
+- **Dans Talend Studio :** Onglet *Job* -> Subtab *Stats & Logs* / *Advanced Settings* -> *Use Specific JVM Arguments*.
+- **Fichier .ini / Script de lancement :** Modifier les paramètres de la JVM.
+
+**2. Paramètres recommandés :**
+\`\`\`bash
+-Xms512m
+-Xmx2048m
+-XX:+UseG1GC
+\`\`\`
+- \`-Xms512m\` : Mémoire initiale allouée au lancement du Job.
+- \`-Xmx2048m\` : Mémoire maximale autorisée pour le tas (Heap Memory).`;
+      } else {
+        responseText = reformIntro + `### 📌 Solution Technique & Composants Talend recommandés
+
+**1. Approche recommandée :**
+Pour répondre à votre besoin sous Talend ETL, utilisez un assemblage de composants standards avec contrôle de flux et de rejets.
+
+**2. Exemple de flux ETL type :**
+FLOW: [tFileInputDelimited] --(Main)--> [tMap_Transform] --(Main)--> [tDBOutput]
+
+**3. Paramètres clés :**
+- **tMap :** Définir la jointure (Inner Join / Left Outer Join), la gestion des rejets (\`Catch Unmatched Rows\`) et les expressions de conversion.
+- **tDBOutput :** Spécifier le mode d'écriture (\`Insert\`, \`Update\`, ou \`Insert or Update\`) et valider le schéma d'entrée/sortie.`;
       }
     }
 
@@ -483,17 +657,9 @@ ${contextText}`;
 
     res.json({ text: replyText });
   } catch (error: any) {
-    console.error("Erreur lors de la génération Gemini:", error);
-    const errStr = String(error?.message || error);
-    if (errStr.includes("429") || errStr.includes("RESOURCE_EXHAUSTED") || errStr.includes("quota")) {
-      res.json({
-        text: "⚠️ **Quota de requêtes API temporairement atteint (429 Quota Exceeded).**\n\nLe quota du service Gemini est saturé pour le moment. Veuillez réordonner votre demande dans 1 minute."
-      });
-      return;
-    }
-    res.status(500).json({
-      error: "Erreur serveur lors de la communication avec l'IA.",
-      details: error.message || String(error)
+    console.error("Erreur générale lors de la génération:", error);
+    res.json({
+      text: "Désolé, une erreur s'est produite lors de la génération. N'hésitez pas à reformuler votre question sur Talend."
     });
   }
 });
