@@ -7,9 +7,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: "50mb" }));
+
+// Fast Health check endpoints for Render & Uptime monitors
+app.get(["/health", "/api/health", "/ping"], (_req, res) => {
+  res.status(200).json({ status: "ok", uptime: process.uptime(), timestamp: Date.now() });
+});
 
 // Initialize GenAI client lazily or safely
 function getAIClient() {
@@ -393,10 +398,9 @@ RÈGLE ABSOLUE ET STRICTE SUR LE DOMAINE D'INTERVENTION :
 - Ne donne aucun conseil, explication ou solution pour les questions hors du domaine Talend.
 
 CONSIGNES STRICTES DE RÉPONSE ET DE STRUCTURE :
-1. REFORMULATION SYSTÉMATIQUE ET OBLIGATOIRE DE LA QUESTION :
-   - Tout au début de ta réponse (sur la toute première ligne), tu DOIS TOUJOURS reformuler clairement et précisément la demande de l'utilisateur sous la forme :
-     **Question reformulée :** [Reformulation claire, professionnelle et synthétique de la problématique Talend posée]
-   - Laisse ensuite une ligne vide avant de dérouler l'explication technique.
+1. INTRODUIRE FLUIDEMENT LE SUJET :
+   - Introduis directement et naturellement la réponse en contextualisant la problématique traitée (ex : « Pour historiser les SCD Type 1 et Type 2 dans Talend, il existe deux méthodes principales : »).
+   - Ne jamais écrire la mention explicite « **Question reformulée :** » ni recopier la question de l'utilisateur. Enchaîne immédiatement avec l'explication et la présentation des méthodes.
 
 2. RIGUEUR ET VÉRIFICATION EXHAUSTIVE DE L'EXACTITUDE TECHNIQUE :
    - Assure-toi avec une certitude absolue de la justesse technique de la réponse (nom exact des composants Talend, syntaxe Java, paramètres de la JVM, options tMap, gestion des schémas et des flux) avant d'exposer la solution. Prends le temps nécessaire pour délivrer une réponse irréprochable et vérifiée.
@@ -406,9 +410,9 @@ CONSIGNES STRICTES DE RÉPONSE ET DE STRUCTURE :
    - Utilise cette représentation en graphe de connaissances pour relier précisément la logique métier aux dépendances de données et aux structures de schémas (Input -> Transform -> Output).
 
 4. DÉLIMITATION NETTE DES DIFFÉRENTES MÉTHODES : S'il existe plusieurs approches ou méthodes pour traiter le problème (ex: Méthode 1 vs Méthode 2 vs Méthode 3), sépare-les TOUJOURS de manière visuelle et structurée avec des titres explicites (ex: "### 📌 Méthode 1 : [Nom de la méthode]") et des séparateurs horizontaux ("---"). Pour chaque méthode, indique de façon concise : le fonctionnement, le code/composants requis, et le cas d'usage recommandé.
-4. EXEMPLES DE CODE CONCRETS : Fournis des extraits de code réels et prêts à l'emploi (expressions tMap Java, requêtes SQL, routines Java, JSONPath) dans des blocs Markdown de code (\`\`\`java, \`\`\`sql, \`\`\`json).
-5. ABSENCE DE CITATION DE SOURCE : Ne cite jamais de noms d'auteurs, manuels ou références de documentation dans la réponse.
-6. RÈGLE STRICTE SUR LES SCHÉMAS FLOW (NE PAS GÉNÉRER SUR DES QUESTIONS DE CODE / CONFIG / MÉTA) :
+5. EXEMPLES DE CODE CONCRETS : Fournis des extraits de code réels et prêts à l'emploi (expressions tMap Java, requêtes SQL, routines Java, JSONPath) dans des blocs Markdown de code (\`\`\`java, \`\`\`sql, \`\`\`json).
+6. ABSENCE DE CITATION DE SOURCE : Ne cite jamais de noms d'auteurs, manuels ou références de documentation dans la réponse.
+7. RÈGLE STRICTE SUR LES SCHÉMAS FLOW (NE PAS GÉNÉRER SUR DES QUESTIONS DE CODE / CONFIG / MÉTA) :
    - GÉNÈRE UNE LIGNE FLOW UNIQUEMENT SI la question de l'utilisateur demande explicitement ou concerne directement un enchaînement de plusieurs composants ETL dans un Job Talend.
    - NE GÉNÈRE EN AUCUN CAS DE LIGNE FLOW (INTERDICTION STRICTE) pour :
      * Les questions sur du code Java, des routines Java (ex: SHA-256, StringUtils, routines système).
@@ -421,6 +425,7 @@ CONSIGNES STRICTES DE RÉPONSE ET DE STRUCTURE :
 8. VRAIS TABLEAUX MARKDOWN : Si tu génères un tableau (comparaisons, types de données, paramètres), utilise EXCLUSIVEMENT la vraie syntaxe Markdown de tableau GFM ('| En-tête 1 | En-tête 2 |\n|---|---|'). Ne génère JAMAIS de faux tableaux avec des ||| ou du texte décalé.
 9. CITATIONS ET SOURCES WEB : Si la réponse provient d'une recherche web ou de documentation en ligne, fournis TOUJOURS les liens clairs au format Markdown ('[Titre du document/site](URL)').
 10. QUESTIONS COMPLÉMENTAIRES SUGGÉRÉES : Termine TOUJOURS la réponse par une section exactement intitulée '### 💡 Questions complémentaires suggérées :' contenant 2 à 3 questions à puces ('- ... ?') en rapport avec le sujet pour aider l'utilisateur à aller plus loin.
+11. TERMINOLOGIE DE L'INTERFACE TALEND STUDIO EN FRANÇAIS : Lorsque tu indiques des chemins de navigation dans les menus, les onglets, les panneaux de configuration ou les propriétés de Talend Studio, utilise la terminologie française correspondant au Studio Talend en français (ex : "Exécuter > Paramètres avancés > Paramètres JVM" au lieu de "Run > Advanced settings > JVM settings", "Composant > Paramètres de base", "Palette", "Dossier de projet", etc.), pour que les instructions soient directement applicables dans leur environnement Studio Talend.
 
 CONTEXTE TECHNIQUE EN VIGUEUR :
 ${contextText}`;
@@ -450,10 +455,10 @@ ${contextText}`;
     let candidate: any = null;
 
     const modelsToTry = [
-      { name: "gemini-3.6-flash", useSearch: true },
-      { name: "gemini-3.6-flash", useSearch: false },
-      { name: "gemini-3.1-flash-lite", useSearch: false },
-      { name: "gemini-flash-latest", useSearch: false }
+      { name: "gemini-2.5-flash", useSearch: true },
+      { name: "gemini-2.5-flash", useSearch: false },
+      { name: "gemini-2.0-flash", useSearch: false },
+      { name: "gemini-1.5-flash", useSearch: false }
     ];
 
     for (const mConfig of modelsToTry) {
@@ -548,17 +553,15 @@ ${contextText}`;
       }
 
       // Generate instant offline fallback response for Talend topics during 429 quota spikes
-      const reformIntro = `**Question reformulée :** ${message.trim()}\n\n`;
-
       if (textLower.includes("scd") || textLower.includes("dimension") || textLower.includes("tdbscd")) {
-        responseText = reformIntro + `### 📌 Méthode 1 : Composant tDBSCD (Historisation Automatisée)
+        responseText = `Pour historiser les SCD Type 1 et Type 2 dans Talend, il existe deux méthodes principales :\n\n### 📌 Méthode 1 : Composant tDBSCD (Historisation Automatisée)
 FLOW: [tDBInput_Ref] --(Main)--> [tDBSCD_Customer]
 
 **1. Fonctionnement :**
 Le composant **tDBSCD** gère la mise à jour des dimensions à évolution lente (Type 1 et Type 2) sans écrire de requête SQL complexe.
 
 **2. Paramètres clés :**
-- **Basic Settings -> SCD Management :**
+- **Paramètres de base -> Gestion SCD (SCD Management) :**
   - **Source Keys :** Identifiant métier (ex: \`customer_id\`).
   - **Type 1 Fields :** Champs écrasés sans mémoire (ex: \`email\`, \`telephone\`).
   - **Type 2 Fields :** Champs historisés générant une nouvelle ligne avec versioning (ex: \`adresse\`, \`statut\`).
@@ -572,17 +575,17 @@ FLOW: [tDBInput_Source] --(Main)--> [tMap_Compare] --(Main)--> [tDBOutput_Insert
 **1. Fonctionnement :**
 Permet un contrôle total du versioning par comparaison de hash MD5 ou de champs spécifiques.`;
       } else if (textLower.includes("parallel") || textLower.includes("parallèle") || textLower.includes("tparallelize")) {
-        responseText = reformIntro + `### 📌 Méthode 1 : Orchestration avec tParallelize
+        responseText = `### 📌 Méthode 1 : Orchestration avec tParallelize
 FLOW: [tParallelize] --(Parallelize)--> [tRunJob_Sub1]
 
 **1. Fonctionnement :**
 Le composant **tParallelize** permet de lancer plusieurs sous-jobs en parallèle sur des threads distincts.
 
 **2. Paramètres clés :**
-- **Basic Settings -> Parallel execution :** Cocher la branche de démarrage parallèle.
+- **Paramètres de base -> Exécution parallèle :** Cocher la branche de démarrage parallèle.
 - **Synchronisation (Wait for all) :** Utiliser la sortie \`Synchronize\` vers un composant final de clôture.`;
       } else if (textLower.includes("routine") || textLower.includes("java") || textLower.includes("sha256") || textLower.includes("hash")) {
-        responseText = reformIntro + `### 📌 Méthode 1 : Routine Java SHA-256 Personnalisée
+        responseText = `### 📌 Méthode 1 : Routine Java SHA-256 Personnalisée
 
 \`\`\`java
 package routines;
@@ -612,10 +615,10 @@ public class TalendUtils {
 **Utilisation dans tMap :**
 \`routines.TalendUtils.getSHA256(row1.user_email)\``;
       } else if (textLower.includes("xmx") || textLower.includes("memoire") || textLower.includes("mémoire") || textLower.includes("jvm")) {
-        responseText = reformIntro + `### 📌 Configuration des Arguments JVM (-Xmx / -Xms)
+        responseText = `### 📌 Configuration des Arguments JVM (-Xmx / -Xms)
 
 **1. Emplacement du paramétrage :**
-- **Dans Talend Studio :** Onglet *Job* -> Subtab *Stats & Logs* / *Advanced Settings* -> *Use Specific JVM Arguments*.
+- **Dans Talend Studio :** Onglet *Exécuter* -> *Paramètres avancés* -> *Paramètres JVM*.
 - **Fichier .ini / Script de lancement :** Modifier les paramètres de la JVM.
 
 **2. Paramètres recommandés :**
@@ -627,7 +630,7 @@ public class TalendUtils {
 - \`-Xms512m\` : Mémoire initiale allouée au lancement du Job.
 - \`-Xmx2048m\` : Mémoire maximale autorisée pour le tas (Heap Memory).`;
       } else {
-        responseText = reformIntro + `### 📌 Solution Technique & Composants Talend recommandés
+        responseText = `### 📌 Solution Technique & Composants Talend recommandés
 
 **1. Approche recommandée :**
 Pour répondre à votre besoin sous Talend ETL, utilisez un assemblage de composants standards avec contrôle de flux et de rejets.
@@ -708,6 +711,35 @@ app.post("/api/analyze-doc", async (req, res) => {
   }
 });
 
+// Signalement d'erreurs et retours utilisateurs
+const reportedErrorsList: Array<{
+  id: string;
+  messageId: string;
+  category: string;
+  details?: string;
+  messageSnippet?: string;
+  timestamp: string;
+}> = [];
+
+app.post("/api/report-error", (req, res) => {
+  try {
+    const { messageId, category, details, messageSnippet } = req.body || {};
+    const report = {
+      id: "report-" + Date.now(),
+      messageId: messageId || "unknown",
+      category: category || "Autre",
+      details: details || "",
+      messageSnippet: messageSnippet ? String(messageSnippet).slice(0, 300) : "",
+      timestamp: new Date().toISOString()
+    };
+    reportedErrorsList.push(report);
+    console.log("📌 [SIGNALEMENT ERREUR TALEND AI]", report);
+    res.json({ success: true, message: "Signalement enregistré avec succès" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur lors du traitement du signalement" });
+  }
+});
+
 // Serve frontend in dev / prod
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
@@ -718,7 +750,15 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      maxAge: "1d",
+      etag: true,
+      setHeaders: (res, filepath) => {
+        if (filepath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache");
+        }
+      }
+    }));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
@@ -726,6 +766,19 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Serveur Talend AI Assistant démarré sur http://0.0.0.0:${PORT}`);
+    
+    // Auto Keep-Alive loop for hosting services like Render to prevent cold starts
+    const renderUrl = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL;
+    if (renderUrl) {
+      console.log(`Keep-Alive activé pour Render (${renderUrl})`);
+      setInterval(async () => {
+        try {
+          await fetch(`${renderUrl}/api/health`);
+        } catch {
+          // Ignore ping errors
+        }
+      }, 14 * 60 * 1000); // Self-ping every 14 minutes (before Render 15 min sleep threshold)
+    }
   });
 }
 

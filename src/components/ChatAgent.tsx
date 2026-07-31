@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp, Sparkles, Copy, Check, Database, GitBranch, Layers, Cpu, Shuffle, ExternalLink, HelpCircle } from 'lucide-react';
+import { ArrowUp, Sparkles, Copy, Check, Database, GitBranch, Layers, Cpu, Shuffle, ExternalLink, HelpCircle, Flag, AlertTriangle, X, Send, CheckCircle2 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChatMessage, ChatSession } from '../types';
@@ -22,16 +22,15 @@ const RANDOM_TALEND_QUESTIONS = [
 ];
 
 const extractFollowUpQuestions = (text: string): string[] => {
-  const marker = "### 💡 Questions complémentaires suggérées :";
-  const idx = text.indexOf(marker);
-  if (idx === -1) return [];
-  const followUpPart = text.slice(idx + marker.length);
+  const match = text.match(/(?:###|\*\*|\n|^)\s*(?:💡\s*)?Questions complémentaires suggérées\s*:?([\s\S]*)$/i);
+  if (!match) return [];
+  const followUpPart = match[1];
   const lines = followUpPart.split('\n');
   const questions: string[] = [];
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
-      const q = trimmed.replace(/^[-*]\s*/, '').trim();
+    if (trimmed.startsWith('-') || trimmed.startsWith('*') || /^\d+\./.test(trimmed)) {
+      const q = trimmed.replace(/^[-*\d.]+\s*/, '').trim();
       if (q.length > 5) {
         questions.push(q);
       }
@@ -72,8 +71,9 @@ const renderFormattedText = (
   copiedId: string | null,
   handleCopy: (code: string, id: string) => void
 ) => {
-  // Strip raw FLOW lines or ASCII diagram text and orphaned connectors completely from message display
+  // Strip raw FLOW lines, ASCII diagram text, and the "Questions complémentaires suggérées" section completely from message body display
   const cleanedText = text
+    .replace(/(?:###|\*\*|\n|^)\s*(?:💡\s*)?Questions complémentaires suggérées\s*:?[\s\S]*$/i, '')
     .replace(/^.*FLOW:.*$/gm, '')
     .replace(/(?:\[[^\]]+\]\s*--\([^)]*\)-->\s*)+\[[^\]]+\]/gi, '')
     .replace(/--\([^)]*\)-->/g, '')
@@ -198,6 +198,13 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Error reporting state
+  const [reportingMsgId, setReportingMsgId] = useState<string | null>(null);
+  const [reportCategory, setReportCategory] = useState<string>("🌐 Terminologie Studio (ex: mots en anglais)");
+  const [reportDetails, setReportDetails] = useState<string>("");
+  const [reportedMessageIds, setReportedMessageIds] = useState<Set<string>>(new Set());
+  const [reportSuccessToast, setReportSuccessToast] = useState<string | null>(null);
 
   // Floating selection context menu state
   const [selectionMenu, setSelectionMenu] = useState<{
@@ -613,13 +620,14 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
                       {/* Text Body */}
                       {renderFormattedText(msg.text, msg.id, copiedId, handleCopy)}
 
-                      {/* Message Copy Button */}
+                      {/* Message Action Bar (Copy & Signal Error) */}
                       <div className="flex flex-col space-y-3 pt-1">
-                        <div className="flex items-center justify-start">
+                        <div className="flex items-center justify-start space-x-2 flex-wrap gap-y-1">
                           <button
                             type="button"
                             onClick={() => {
                               const cleanText = msg.text
+                                .replace(/(?:###|\*\*|\n|^)\s*(?:💡\s*)?Questions complémentaires suggérées\s*:?[\s\S]*$/i, '')
                                 .replace(/^.*FLOW:.*$/gm, '')
                                 .replace(/(?:\[[^\]]+\]\s*--\([^)]*\)-->\s*)+\[[^\]]+\]/gi, '')
                                 .replace(/--\([^)]*\)-->/g, '')
@@ -640,7 +648,132 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
                               </>
                             )}
                           </button>
+
+                          {/* Report Error Button */}
+                          {reportedMessageIds.has(msg.id) ? (
+                            <div className="flex items-center space-x-1 text-xs text-emerald-400 font-medium px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-800/60 font-sans">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Signalement transmis</span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (reportingMsgId === msg.id) {
+                                  setReportingMsgId(null);
+                                } else {
+                                  setReportingMsgId(msg.id);
+                                  setReportCategory("🌐 Terminologie Studio (ex: mots en anglais)");
+                                  setReportDetails("");
+                                }
+                              }}
+                              className={`flex items-center space-x-1.5 text-xs transition font-sans px-2.5 py-1 rounded-lg border ${
+                                reportingMsgId === msg.id
+                                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 font-medium'
+                                  : 'text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 border-transparent hover:border-zinc-700/80'
+                              }`}
+                            >
+                              <Flag className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              <span>Signaler une erreur</span>
+                            </button>
+                          )}
                         </div>
+
+                        {/* Error Reporting Expanded Form */}
+                        {reportingMsgId === msg.id && (
+                          <div className="mt-2 p-3.5 sm:p-4 rounded-xl bg-[#1a1a1a] border border-amber-500/35 text-xs sm:text-sm space-y-3 animate-in fade-in zoom-in-95 duration-150 shadow-2xl">
+                            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                              <div className="flex items-center space-x-2 text-amber-300 font-semibold font-sans">
+                                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span>Signaler une erreur ou une imprécision</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setReportingMsgId(null)}
+                                className="text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800 transition"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="block text-xs text-zinc-300 font-medium font-sans">
+                                Type d'erreur constaté :
+                              </label>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                {[
+                                  "🌐 Terminologie Studio (ex: mots en anglais)",
+                                  "❌ Information incorrecte ou incomplète",
+                                  "🎨 Problème de format ou d'affichage",
+                                  "💡 Autre précision / suggestion"
+                                ].map((cat) => (
+                                  <button
+                                    key={cat}
+                                    type="button"
+                                    onClick={() => setReportCategory(cat)}
+                                    className={`text-left text-xs px-2.5 py-1.5 rounded-lg border transition font-sans flex items-center ${
+                                      reportCategory === cat
+                                        ? 'bg-amber-500/20 border-amber-500/60 text-amber-200 font-medium'
+                                        : 'bg-zinc-900 border-zinc-700/70 text-zinc-300 hover:bg-zinc-800'
+                                    }`}
+                                  >
+                                    {cat}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="block text-xs text-zinc-300 font-medium font-sans">
+                                Description du problème ou suggestion de correction :
+                              </label>
+                              <textarea
+                                value={reportDetails}
+                                onChange={(e) => setReportDetails(e.target.value)}
+                                placeholder="Ex: 'Run > Advanced settings' devrait être nommé 'Exécuter > Paramètres avancés' dans Talend Studio..."
+                                rows={2}
+                                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500/70 transition resize-none font-sans"
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-end space-x-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => setReportingMsgId(null)}
+                                className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition font-sans"
+                              >
+                                Annuler
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await fetch('/api/report-error', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        messageId: msg.id,
+                                        category: reportCategory,
+                                        details: reportDetails,
+                                        messageSnippet: msg.text.slice(0, 300)
+                                      })
+                                    });
+                                  } catch (e) {
+                                    console.error(e);
+                                  }
+                                  setReportedMessageIds(prev => new Set(prev).add(msg.id));
+                                  setReportingMsgId(null);
+                                  setReportSuccessToast("Merci pour votre retour ! Votre signalement a bien été transmis.");
+                                  setTimeout(() => setReportSuccessToast(null), 4000);
+                                }}
+                                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-lg transition shadow-md active:scale-95 font-sans"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Envoyer le signalement</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Interactive Suggested Follow-up Questions Pills */}
                         {followUps.length > 0 && (
@@ -691,6 +824,14 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
             <div ref={chatEndRef} />
           </div>
         </div>
+
+        {/* Floating Success Toast Notification for Signalements */}
+        {reportSuccessToast && (
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-950/90 border border-emerald-500/60 text-emerald-200 px-4 py-2.5 rounded-xl shadow-2xl flex items-center space-x-2 text-xs sm:text-sm font-sans animate-in fade-in slide-in-from-top-4 duration-200 backdrop-blur-md">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{reportSuccessToast}</span>
+          </div>
+        )}
 
         {/* Floating Context Selection Menu */}
         {selectionMenu && (
