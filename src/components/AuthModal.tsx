@@ -64,6 +64,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, currentUs
         setError('Identifiants incorrects.');
       } else if (err.code === 'auth/weak-password') {
         setError('Le mot de passe doit faire au moins 6 caractères.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError("L'inscription par Email / Mot de passe n'est pas encore activée dans votre console Firebase (Authentication > Sign-in method > Email/Password).");
       } else {
         setError(err.message || 'Une erreur est survenue.');
       }
@@ -165,9 +167,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, currentUs
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <div className="flex-1">{error}</div>
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex flex-col space-y-2">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 font-medium">{error}</div>
+                </div>
+                {error.includes("n'est pas encore activée") && (
+                  <div className="mt-2 pt-2 border-t border-red-500/20 text-[11px] text-zinc-300 space-y-1 font-sans">
+                    <p className="font-semibold text-amber-400">Comment activer l'authentification dans Firebase :</p>
+                    <ol className="list-decimal list-inside space-y-0.5 text-zinc-400 pl-1">
+                      <li>Ouvrez la <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline hover:text-cyan-300">Console Firebase</a></li>
+                      <li>Sélectionnez votre projet (ex: <code className="text-amber-300 bg-zinc-900 px-1 rounded">ai-studio-remixtalendaiboo-...</code>)</li>
+                      <li>Allez dans <strong>Build &gt; Authentication</strong></li>
+                      <li>Sous l'onglet <strong>Sign-in method</strong>, cliquez sur <strong>Adresse e-mail/Mot de passe</strong> (ou Google/Facebook/Apple/LinkedIn) et cochez <strong>Activer</strong>.</li>
+                    </ol>
+                  </div>
+                )}
               </div>
             )}
 

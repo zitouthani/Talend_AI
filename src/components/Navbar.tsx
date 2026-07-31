@@ -40,7 +40,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Center: Brand Logo & Title */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-2 px-2 py-1.5 font-sans font-medium">
+          <div 
+            className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-2 px-2 py-1.5 font-sans font-medium"
+            style={{ marginLeft: '-80px', paddingLeft: '2px' }}
+          >
             <Sparkles className="w-4.5 h-4.5 text-cyan-400 shrink-0" />
             <span className="font-semibold text-white tracking-tight text-sm sm:text-base">Talend AI</span>
           </div>

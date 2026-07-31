@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp, Sparkles, Copy, Check, Database, GitBranch, Layers, Cpu, Shuffle, ExternalLink, HelpCircle, Flag, AlertTriangle, X, Send, CheckCircle2, Mail } from 'lucide-react';
+import { ArrowUp, Sparkles, Copy, Check, Database, GitBranch, Layers, Cpu, Shuffle, ExternalLink, HelpCircle, Flag, AlertTriangle, X, Send, CheckCircle2, Mail, Download, FileText } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChatMessage, ChatSession } from '../types';
 import { JobFlowVisualizer } from './JobFlowVisualizer';
 import { HistorySidebar } from './HistorySidebar';
+import { exportSessionToPDF } from '../utils/pdfExport';
 
 const RANDOM_TALEND_QUESTIONS = [
   "Comment gérer l'historisation des données Type 1 et Type 2 avec tDBSCD dans Talend ?",
@@ -540,6 +541,32 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
       {/* Main Chat Conversation View */}
       <div className="flex-1 flex flex-col h-full relative min-w-0 bg-[#212121]">
         
+        {/* Top Active Session Header with PDF Export */}
+        {messages.length > 0 && (
+          <div className="sticky top-0 z-20 bg-[#1e1e1e]/95 backdrop-blur border-b border-zinc-800/90 px-3 sm:px-5 py-2.5 flex items-center justify-between text-xs font-sans shadow-sm">
+            <div className="flex items-center space-x-2 truncate pr-2">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 animate-pulse" />
+              <span className="text-zinc-200 font-semibold truncate text-xs sm:text-sm">
+                {activeSession?.title || "Discussion Talend"}
+              </span>
+              <span className="text-zinc-500 hidden sm:inline text-[11px] font-mono">
+                • {messages.length} message{messages.length > 1 ? 's' : ''}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => exportSessionToPDF(activeSession?.title || "Session_Talend", messages)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:text-cyan-200 font-medium transition shadow-sm active:scale-95 shrink-0"
+              title="Exporter la conversation actuelle au format PDF"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Exporter en PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+          </div>
+        )}
+
         {/* Messages Scroll Area */}
         <div
           onMouseUp={handleTextSelection}
