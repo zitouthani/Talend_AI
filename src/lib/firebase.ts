@@ -7,6 +7,9 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User
@@ -67,6 +70,9 @@ export const syncUserProfile = async (user: User, providerName: string = 'email'
 export { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
   signInWithPopup, 
   firebaseSignOut,
   onAuthStateChanged 

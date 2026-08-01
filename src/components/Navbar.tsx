@@ -8,6 +8,7 @@ interface NavbarProps {
   isHistoryOpen: boolean;
   currentUser: User | null;
   onOpenAuth: () => void;
+  isActivated?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
@@ -15,7 +16,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleHistory, 
   isHistoryOpen,
   currentUser,
-  onOpenAuth
+  onOpenAuth,
+  isActivated = false,
 }) => {
   return (
     <header className="bg-[#171717] border-b border-zinc-800/80 text-zinc-100 sticky top-0 z-50">
@@ -42,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Center: Brand Logo & Title */}
           <div 
             className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-2 px-2 py-1.5 font-sans font-medium"
-            style={{ marginLeft: '-80px', paddingLeft: '2px' }}
+            style={{ marginLeft: '-16px' }}
           >
             <Sparkles className="w-4.5 h-4.5 text-cyan-400 shrink-0" />
             <span className="font-semibold text-white tracking-tight text-sm sm:text-base">Talend AI</span>
@@ -54,13 +56,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={onOpenAuth}
               title={currentUser ? `Connecté (${currentUser.email})` : "Se connecter"}
               className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${
-                currentUser 
+                currentUser || isActivated
                   ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20' 
                   : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800'
               }`}
             >
-              <UserIcon className="w-3.5 h-3.5" />
-              <span className="hidden md:inline max-w-[120px] truncate">
+              <UserIcon className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="hidden md:inline max-w-[140px] truncate">
                 {currentUser ? (currentUser.displayName || currentUser.email) : 'Connexion'}
               </span>
             </button>
@@ -81,5 +83,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
 
 

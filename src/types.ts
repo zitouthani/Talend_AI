@@ -28,6 +28,26 @@ export interface ChatMessage {
   bookCitations?: string[];
   codeExamples?: { language: string; code: string; title: string }[];
   diagrams?: { title: string; type: string; flow: string[] }[];
+  // RAG Metadata fields (Partie 1 & Partie 2)
+  sourceMode?: 'rag_document' | 'web_fallback' | 'off_topic';
+  bestSimilarityScore?: number;
+  similarityThreshold?: number;
+  retrievedChunks?: Array<{
+    source: string;
+    chapter: string;
+    page: number | string;
+    snippet: string;
+  }>;
+}
+
+export interface UserActivationState {
+  email: string;
+  isActivated: boolean;
+  activationCode?: string;
+  dailyQuota: number;
+  usedToday: number;
+  remainingQuota: number;
+  isFlaggedSuspicious?: boolean;
 }
 
 export interface ChatSession {

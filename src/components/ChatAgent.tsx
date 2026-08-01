@@ -82,7 +82,7 @@ const renderFormattedText = (
     .trim();
 
   return (
-    <div className="markdown-body text-sm sm:text-[15px] leading-relaxed text-zinc-200">
+    <div className="markdown-body text-sm sm:text-[15px] leading-relaxed text-zinc-200 select-text selectable-text">
       <Markdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -91,7 +91,7 @@ const renderFormattedText = (
           h3: ({ children }) => <h3 className="text-xs sm:text-sm font-semibold text-zinc-100 mt-3 mb-1.5 font-sans flex items-center">{children}</h3>,
           hr: () => <hr className="my-4 border-zinc-800" />,
           blockquote: ({ children }) => <blockquote className="my-3 pl-3.5 border-l-2 border-cyan-500/80 bg-zinc-900/60 py-2 pr-3 rounded-r-lg text-zinc-300 text-xs sm:text-sm">{children}</blockquote>,
-          p: ({ children }) => <p className="mb-2.5 leading-relaxed text-zinc-200">{children}</p>,
+          p: ({ children }) => <div className="mb-2.5 leading-relaxed text-zinc-200">{children}</div>,
           strong: ({ children }) => <strong className="font-bold text-cyan-400">{children}</strong>,
           ul: ({ children }) => <ul className="list-disc list-outside space-y-1.5 my-2.5 text-zinc-200 pl-5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal list-outside space-y-1.5 my-2.5 text-zinc-200 pl-5">{children}</ol>,
@@ -142,14 +142,16 @@ const renderFormattedText = (
           code({ inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
             const codeString = String(children).replace(/\n$/, '');
-            if (!inline && codeString.includes('\n')) {
+            const isBlock = !inline || !!match || codeString.includes('\n');
+
+            if (isBlock) {
               const blockId = `${msgId}-code-${Math.random()}`;
               const isCopied = copiedId === blockId;
-              const lang = match ? match[1] : 'code';
+              const lang = match ? match[1] : 'java';
               return (
-                <div className="my-4 rounded-xl bg-[#0d0d0d] border border-zinc-800/90 overflow-hidden font-mono text-xs sm:text-sm shadow-md">
-                  <div className="flex items-center justify-between px-4 py-2 bg-[#1e1e1e] border-b border-zinc-800 text-zinc-400 text-xs font-sans">
-                    <span className="font-mono text-zinc-300 text-xs lowercase">{lang}</span>
+                <div className="my-3 rounded-xl bg-[#0d0d0d] border border-zinc-800/90 overflow-hidden font-mono text-xs sm:text-sm shadow-md max-w-full">
+                  <div className="flex items-center justify-between px-3 sm:px-4 py-2 bg-[#1e1e1e] border-b border-zinc-800 text-zinc-400 text-xs font-sans">
+                    <span className="font-mono text-cyan-300 text-xs lowercase font-semibold">{lang}</span>
                     <button
                       type="button"
                       onClick={() => handleCopy(codeString, blockId)}
@@ -163,19 +165,19 @@ const renderFormattedText = (
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5" />
-                          <span>Copier le code</span>
+                          <span>Copier</span>
                         </>
                       )}
                     </button>
                   </div>
-                  <pre className="p-4 overflow-x-auto text-zinc-100 leading-relaxed font-mono bg-[#0d0d0d]">
+                  <pre className="p-3 sm:p-4 overflow-x-auto text-zinc-100 leading-relaxed font-mono bg-[#0d0d0d] whitespace-pre-wrap break-all sm:break-normal">
                     {codeString}
                   </pre>
                 </div>
               );
             }
             return (
-              <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-100 font-mono text-xs border border-zinc-700/50" {...props}>
+              <code className="px-1.5 py-0.5 rounded bg-zinc-800/90 text-cyan-300 font-mono text-xs border border-zinc-700/50 break-all [word-break:break-word] whitespace-pre-wrap max-w-full" {...props}>
                 {children}
               </code>
             );
@@ -223,7 +225,11 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
   const messages = activeSession ? activeSession.messages : [];
 
   // Handle text selection in assistant messages
-  const handleTextSelection = () => {
+  const handleTextSelection = (e?: React.MouseEvent) => {
+    // Si c'est un clic droit (button 2), ne pas interférer avec le menu contextuel natif "Copier" du navigateur
+    if (e && e.button !== 0) {
+      return;
+    }
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) {
       setSelectionMenu(null);
@@ -378,7 +384,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: query,
-          history: currentMessages.slice(-8).map(m => ({ sender: m.sender, text: m.text }))
+          history: currentMessages.map(m => ({ sender: m.sender, text: m.text }))
         })
       });
 
@@ -414,7 +420,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
       }
 
       // Check if response contains an explicit FLOW: line
-      const asciiFlowMatch = data.text.match(/(?:^|\n)FLOW:\s*(\[[^\]]+\](?:\s*--\([^)]+\)-->\s*\[[^\]]+\])+)/i);
+      const asciiFlowMatch = (data.text || data.answer || '').match(/(?:^|\n)FLOW:\s*(\[[^\]]+\](?:\s*--\([^)]+\)-->\s*\[[^\]]+\])+)/i);
       let extractedFlowString: string | undefined = undefined;
       if (asciiFlowMatch) {
         extractedFlowString = asciiFlowMatch[1].trim();
@@ -444,9 +450,13 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
       const agentMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'agent',
-        text: data.text,
+        text: data.answer || data.text || 'Aucune réponse générée.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        diagrams: diagramsList
+        diagrams: diagramsList,
+        sourceMode: data.sourceMode,
+        bestSimilarityScore: data.bestSimilarityScore,
+        similarityThreshold: data.similarityThreshold,
+        retrievedChunks: data.retrievedChunks
       };
 
       // Append agent message to current session
@@ -496,32 +506,85 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const SUGGESTIONS = [
+  const TALEND_SUGGESTION_POOL = [
     {
       title: "tMap & Catch Rejects",
-      desc: "Inner Join, expressions Java et traitement des erreurs",
+      desc: "Comment configurer un Inner Join avec expressions Java et capturer les rejets ?",
       icon: <GitBranch className="w-5 h-5 text-cyan-400" />,
       query: "Comment configurer le tMap avec Inner Join, des expressions Java et la capture des rejets Catch Unmatched ?"
     },
     {
       title: "Parallélisme (tParallelize)",
-      desc: "Exécuter des subjobs en parallèle sur plusieurs threads",
+      desc: "Comment exécuter des subjobs en parallèle sur plusieurs threads ?",
       icon: <Layers className="w-5 h-5 text-cyan-400" />,
       query: "Comment utiliser tParallelize pour exécuter des subjobs en parallèle sur plusieurs threads ?"
     },
     {
       title: "Historisation SCD Type 1 & 2 (tDBSCD)",
-      desc: "Gestion des dimensions à évolution lente et suivi des clés historisées",
+      desc: "Comment gérer les dimensions à évolution lente avec le composant tDBSCD ?",
       icon: <Database className="w-5 h-5 text-cyan-400" />,
       query: "Comment mettre en place la gestion de la dimension SCD Type 1 et Type 2 avec tDBSCD ?"
     },
     {
       title: "Routines Java & Mémoire JVM",
-      desc: "Créer une routine de hachage et optimiser la mémoire -Xmx",
+      desc: "Comment créer une routine de hachage Java et optimiser la mémoire -Xmx ?",
       icon: <Cpu className="w-5 h-5 text-cyan-400" />,
       query: "Comment écrire une routine Java personnalisée et ajuster la mémoire de la JVM (-Xmx2048m) ?"
+    },
+    {
+      title: "API REST & JSON (tRESTClient)",
+      desc: "Comment consommer et parser une API REST sécurisée dans un flux Talend ?",
+      icon: <ExternalLink className="w-5 h-5 text-cyan-400" />,
+      query: "Comment faire un appel d'API REST sécurisé avec tRESTClient et parser la réponse dans un flux Talend ?"
+    },
+    {
+      title: "Gestion de Fichiers (tFileList)",
+      desc: "Comment boucler sur un répertoire de fichiers et les traiter dynamiquement ?",
+      icon: <FileText className="w-5 h-5 text-cyan-400" />,
+      query: "Comment boucler sur une liste de fichiers avec tFileList et tIterateToFlow ?"
+    },
+    {
+      title: "Variables & Contextes",
+      desc: "Comment transmettre dynamiquement des variables de contexte à un subjob ?",
+      icon: <Shuffle className="w-5 h-5 text-cyan-400" />,
+      query: "Quelle est la méthode pour passer des variables de contexte dynamiquement à un tRunJob ?"
+    },
+    {
+      title: "Gestion d'Erreurs (tLogCatcher)",
+      desc: "Comment intercepter et journaliser automatiquement les erreurs et exceptions ?",
+      icon: <AlertTriangle className="w-5 h-5 text-cyan-400" />,
+      query: "Comment traiter les erreurs et les exceptions avec tLogCatcher et tDie ?"
+    },
+    {
+      title: "Buffer & Cache (tHashOutput)",
+      desc: "Comment conserver des données en mémoire temporaire sans écriture disque ?",
+      icon: <Database className="w-5 h-5 text-cyan-400" />,
+      query: "Quelle est la différence entre tHashOutput / tHashInput et l'écriture dans des fichiers temporaires ?"
+    },
+    {
+      title: "Extraction JSON (tExtractJSONFields)",
+      desc: "Comment extraire et aplatir des structures JSON complexes avec JSONPath ?",
+      icon: <Layers className="w-5 h-5 text-cyan-400" />,
+      query: "Comment lire un fichier JSON imbriqué avec tExtractJSONFields dans un Job Talend ?"
     }
   ];
+
+  const getRandomSuggestions = () => {
+    const shuffled = [...TALEND_SUGGESTION_POOL].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 4);
+  };
+
+  const [currentSuggestions, setCurrentSuggestions] = useState(() => getRandomSuggestions());
+
+  const handleRefreshSuggestions = () => {
+    setCurrentSuggestions(getRandomSuggestions());
+  };
+
+  useEffect(() => {
+    if (!activeSessionId) {
+      setCurrentSuggestions(getRandomSuggestions());
+    }
+  }, [activeSessionId, newChatTrigger]);
 
   return (
     <div className="flex flex-1 w-full h-[calc(100vh-3.5rem)] relative font-sans text-zinc-100 overflow-hidden">
@@ -587,24 +650,41 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
                   En quoi puis-je vous aider sur Talend aujourd'hui ?
                 </h1>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
-                  {SUGGESTIONS.map((item, idx) => (
+                <div className="w-full max-w-2xl">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-zinc-400 uppercase tracking-wider font-sans">
+                      Suggestions de questions
+                    </span>
                     <button
-                      key={idx}
-                      onClick={() => handleSendMessage(item.query)}
-                      className="p-3.5 sm:p-4 rounded-2xl bg-[#2f2f2f]/60 hover:bg-[#2f2f2f] border border-zinc-700/50 text-left transition flex flex-col justify-between group active:scale-[0.99]"
+                      type="button"
+                      onClick={handleRefreshSuggestions}
+                      className="flex items-center space-x-1.5 text-xs text-zinc-400 hover:text-cyan-400 transition font-medium group py-1 px-2 rounded-lg hover:bg-zinc-800/60"
+                      title="Generer d'autres suggestions"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold text-xs sm:text-sm text-zinc-200 group-hover:text-cyan-400 transition">
-                          {item.title}
-                        </span>
-                        {item.icon}
-                      </div>
-                      <p className="text-[11px] sm:text-xs text-zinc-400 font-normal leading-relaxed">
-                        {item.desc}
-                      </p>
+                      <Shuffle className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-180 transition-transform duration-300" />
+                      <span>Autres suggestions</span>
                     </button>
-                  ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                    {currentSuggestions.map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSendMessage(item.query)}
+                        className="p-3.5 sm:p-4 rounded-2xl bg-[#2f2f2f]/60 hover:bg-[#2f2f2f] border border-zinc-700/50 text-left transition flex flex-col justify-between group active:scale-[0.99] hover:border-cyan-500/30"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-xs sm:text-sm text-zinc-200 group-hover:text-cyan-400 transition">
+                            {item.title}
+                          </span>
+                          {item.icon}
+                        </div>
+                        <p className="text-[11px] sm:text-xs text-zinc-400 font-normal leading-relaxed">
+                          {item.desc}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -633,6 +713,25 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
                     </div>
                     <div className="flex-1 space-y-3 min-w-0">
                       
+                      {/* RAG Source Indicator Badge (Clean, without dev secrets or debug scores) */}
+                      {msg.sourceMode && (
+                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border font-sans ${
+                          msg.sourceMode === 'rag_document'
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                            : msg.sourceMode === 'web_fallback'
+                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                            : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                        }`}>
+                          {msg.sourceMode === 'rag_document' ? (
+                            <span>📚 Base de connaissance Talend</span>
+                          ) : msg.sourceMode === 'web_fallback' ? (
+                            <span>🌐 Documentation Talend Web</span>
+                          ) : (
+                            <span>Question filtrée</span>
+                          )}
+                        </div>
+                      )}
+
                       {/* Render Visual Diagram in output block if available */}
                       {msg.diagrams && msg.diagrams.map((diag, dIdx) => (
                         <div key={dIdx} className="my-2">
@@ -646,6 +745,23 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
 
                       {/* Text Body */}
                       {renderFormattedText(msg.text, msg.id, copiedId, handleCopy)}
+
+                      {/* Clean Source Citations (Without Top-K or Overlap dev secrets) */}
+                      {msg.sourceMode === 'rag_document' && msg.retrievedChunks && msg.retrievedChunks.length > 0 && (
+                        <div className="mt-2 rounded-xl border border-zinc-800 bg-[#161922] p-3 text-xs space-y-1.5 font-sans">
+                          <div className="text-zinc-400 font-semibold flex items-center justify-between">
+                            <span>📖 Sources issues du livre :</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            {msg.retrievedChunks.slice(0, 4).map((chunk, cIdx) => (
+                              <div key={cIdx} className="rounded-lg bg-zinc-900/90 border border-zinc-800 p-2 text-[11px] text-zinc-300 space-y-0.5">
+                                <div className="font-semibold text-cyan-300 truncate">Livre : {chunk.source}</div>
+                                <div className="text-zinc-400 truncate">Chapitre : {chunk.chapter}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Message Action Bar (Copy & Signal Error) */}
                       <div className="flex flex-col space-y-3 pt-1">
